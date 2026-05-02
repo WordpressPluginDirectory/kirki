@@ -1,15 +1,15 @@
-=== Kirki – Freeform Website Builder & Customizer ===
+=== Kirki – Freeform Page Builder, Website Builder & Customizer ===
 Contributors: themeum
 Donate link: https://kirki.com
-Tags: page builder, website builder, drag and drop, no-code, freeform canvas, theme customizer
+Tags: page builder, website builder, drag and drop, form builder, freeform canvas
 Requires at least: 5.3
 Tested up to: 6.9
-Stable tag: 6.0.1
+Stable tag: 6.0.3
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A freeform drag-and-drop visual builder for WordPress and Customizer framework — design on an infinite canvas without coding, with built-in forms, animations, dynamic content, and 35+ theme controls.
+Freeform page builder & website builder for WordPress. Infinite canvas for complex, interactive websites. Built-in forms, animations & Customizer.
 
 == Description ==
 
@@ -168,7 +168,7 @@ Yes, import and export features are available.
 Yes, you can create dynamic templates and data-driven designs.
 
 = Where can I get support? =
-Free users can get help from the Kirki community on Facebook: https://facebook.com/groups/kirki — thousands of designers and developers ready to help. Priority ticket support is available for Pro and Agency plan users at https://kirki.com/support
+Free users can get help from the Kirki community on Facebook: https://facebook.com/groups/kirkicommunity — thousands of designers and developers ready to help. Priority ticket support is available for Pro and Agency plan users at https://kirki.com/support
 
 = I was using Kirki as a Customizer framework. Has anything changed? =
 Nothing. All existing Customizer controls are fully preserved. Your current setup will not be affected by the update. The visual builder is simply a new addition on top of the framework you already rely on.
@@ -187,6 +187,19 @@ Nothing. All existing Customizer controls are fully preserved. Your current setu
 ---
 
 == Changelog ==
+
+= 6.0.3 =
+* Fix: WebFontLoader JavaScript file not found issue resolved.
+* Fix: WebFont is not defined error fixed in the Konte theme.
+* Fix: Added backward compatibility for all Kirki modules (CSS, Tooltips, Postmessage, Field_Dependencies, Selective_Refresh, Preset, Webfonts, Editor_Styles) to prevent fatal errors.
+* Fix: Added class alias existence checks to prevent redeclaration warnings when themes/plugins have bundled Kirki.
+* Fix: Added type safety check in Field constructor to handle legacy argument formats.
+* Fix: Added missing property declarations ($name, $data_tags, $dynamic) to prevent PHP 8.2+ dynamic property deprecation warnings.
+* Improvement: Stability improvements.
+* Improvement: Fixed DesiIcons alignment issue.
+
+= 6.0.2 =
+* Fix: Resolved a fatal error that occurred when the wp_insert_post hook was triggered after the plugin finished loading.
 
 = 6.0.1 =
 * Update: Theme header and footer display logic updated.
