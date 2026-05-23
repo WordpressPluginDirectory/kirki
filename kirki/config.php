@@ -9,9 +9,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-if (!defined('KIRKI_VERSION')) {
-		define('KIRKI_VERSION', '6.0.3');
-}
 define( 'KIRKI_APP_PREFIX', 'kirki' );
 define( 'KIRKI_CORE_PLUGIN_URL', 'https://kirki.com' );
 define( 'KIRKI_PUBLIC_ASSETS_URL', 'https://d31d7414w5c76z.cloudfront.net' );
@@ -185,50 +182,5 @@ define(
 			'postType' =>'kirki_popup',
 			'type'     => 'select_with_wp_post_suggestion',
 		),
-	)
-);
-
-define(
-	'KIRKI_MIGRATION_REPLACEMENTS',
-	array(
-		'droip_global_data'           => 'kirki_global_data',
-		'droip_global_style_block'    => 'kirki_global_style_block',
-		'droip_template_conditions'   => 'kirki_template_conditions',
-		'droip_disabled_page_symbols' => 'kirki_disabled_page_symbols',
-		'droip_used_style_block_ids'  => 'kirki_used_style_block_ids',
-		'droip_imported_batch_id'     => 'kirki_imported_batch_id',
-		'droip_page_seo_settings'     => 'kirki_page_seo_settings',
-		'droip_user_custom_fonts'     => 'kirki_user_custom_fonts',
-		'droip_page_custom_code'      => 'kirki_page_custom_code',
-		'droip_stage_versions'        => 'kirki_stage_versions',
-		'droip_used_font_list'        => 'kirki_used_font_list',
-		'droip_user_controller'       => 'kirki_user_controller',
-		'droip_user_saved_data'       => 'kirki_user_saved_data',
-		'droip_editor_mode'           => 'kirki_editor_mode',
-		'droip_cm_fields'             => 'kirki_cm_fields',
-		'droip_cm_field_'             => 'kirki_cm_field_',
-
-		'droip_template'              => 'kirki_template',
-		'droip_utility'               => 'kirki_utility',
-		'droip_symbol'                => 'kirki_symbol',
-		'droip_popup'                 => 'kirki_popup',
-		'droip_post'                  => 'kirki_post',
-		'droip_cm'                    => 'kirki_cm',
-
-		'DROIP_'                      => 'KIRKI_',
-		'Droip_'                      => 'Kirki_',
-		'droip_'                      => 'kirki_',
-		'droip-'                      => 'kirki-',
-		'_droip'                      => '_kirki',
-		'-droip'                      => '-kirki',
-
-		'"droip_'                     => '"kirki_',
-		'"droip"'                     => '"kirki"',
-		"'droip_"                     => "'kirki_",
-		"'droip'"                     => "'kirki'",
-
-		'droip'                       => 'kirki',
-		'Droip'                       => 'Kirki',
-		'DROIP'                       => 'KIRKI',
 	)
 );

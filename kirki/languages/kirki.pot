@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the Kirki plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: Kirki 6.0.3\n"
+"Project-Id-Version: Kirki 6.0.9\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/kirki\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-01T16:47:02+00:00\n"
+"POT-Creation-Date: 2026-05-22T09:25:13+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: kirki\n"
@@ -1470,6 +1470,70 @@ msgid "Ultra-Bold 900 Italic"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
+#: assets/js/kirki.min.js:2
+msgid "Saving data is not allowed in editor preview mode."
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+#: assets/js/kirki.min.js:2
+msgid "error"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+#: assets/js/kirki.min.js:2
+msgid "Controller data saved failed."
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Get app list error."
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Settings not found!"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Failed to save settings."
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "App install failed."
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "App deletion failed."
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "App update failed."
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Invalid access"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "success"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Content manager data saved"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Content manager item data saved"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Updated"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+#: assets/js/kirki.min.js:2
+msgid "User common data saved failed."
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
 msgid "This field is required"
 msgstr ""
 
@@ -1559,74 +1623,6 @@ msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
 msgid "Invalid color"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-#: assets/js/kirki.min.js:2
-msgid "Saving data is not allowed in editor preview mode."
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-#: assets/js/kirki.min.js:2
-msgid "error"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-#: assets/js/kirki.min.js:2
-msgid "Controller data saved failed."
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-#: assets/js/kirki.min.js:2
-msgid "User common data saved failed."
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Get app list error."
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Settings not found!"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "success"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Settings saved!"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Failed to save settings."
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "App install failed."
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "App deletion failed."
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "App update failed."
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Invalid access"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Content manager data saved"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Content manager item data saved"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Updated"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -1750,6 +1746,10 @@ msgid "Variable copied"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
+msgid "Duplicate"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
 msgid "Delete"
 msgstr ""
 
@@ -1870,6 +1870,10 @@ msgid "Name"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
+msgid "Tag"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
 msgid "Value"
 msgstr ""
 
@@ -1971,6 +1975,10 @@ msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
 msgid "Parent symbol updated"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Component instance updated"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -2130,11 +2138,27 @@ msgid "Format"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
-msgid "Behavior"
+msgid "Curve"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
-msgid "Curve"
+msgid "Delay"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Bezier"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Bounce"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Timing Editor"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Behavior"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -2147,10 +2171,6 @@ msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
 msgid "Autoplay on Loading"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Delay"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -2183,10 +2203,6 @@ msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
 msgid "Copy Element Style"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Duplicate"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -2312,6 +2328,10 @@ msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
 msgid "Arrows"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Hamburger menu"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -2627,14 +2647,6 @@ msgid "Offset"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
-msgid "Bezier"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Bounce"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
 msgid "Animate when the user clicks or taps on the element."
 msgstr ""
 
@@ -2816,10 +2828,6 @@ msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
 msgid "Custom Timing Editor"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Timing Editor"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -3023,11 +3031,11 @@ msgid "Guide"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
-msgid "Guide Color"
+msgid "Done"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
-msgid "Done"
+msgid "Guide Color"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -3061,6 +3069,10 @@ msgstr ""
 #: assets/js/kirki-editor.min.js:2
 #, js-format
 msgid "Element cannot be pasted in %s"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "CMS"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -3156,6 +3168,18 @@ msgid "Export Kirki Page"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
+msgid "Close"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Export"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "PHP Zip extension is not enabled in your system"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
 msgid "Class Prefix (optional)"
 msgstr ""
 
@@ -3169,18 +3193,6 @@ msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
 msgid "eg. kirki-page"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Close"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Export"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "PHP Zip extension is not enabled in your system"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -3346,6 +3358,10 @@ msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
 msgid "Copied to clipboard"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Settings saved!"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -3530,10 +3546,6 @@ msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
 msgid "Add Mode"
-msgstr ""
-
-#: assets/js/kirki-editor.min.js:2
-msgid "Variable"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
@@ -4126,7 +4138,11 @@ msgid "Enhancing User Experience with Smooth Scrolling: From Instant (1%)"
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2
-msgid "Show Wordpress header & footer"
+msgid "Default Header & Footer"
+msgstr ""
+
+#: assets/js/kirki-editor.min.js:2
+msgid "Enable to show the default WordPress header and footer on pages designed using Kirki."
 msgstr ""
 
 #: assets/js/kirki-editor.min.js:2

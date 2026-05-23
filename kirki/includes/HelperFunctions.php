@@ -1259,7 +1259,7 @@ class HelperFunctions {
 			$s                      .= $preview->getCustomFontsLinks();
 		}
 
-		if($get_variable){
+		if($get_variable && false){ // this is maintained from: TheFrontendHooks
 			$variable_post_id = $post_id ? $post_id : HelperFunctions::get_post_id_if_possible_from_url();
 			$variable_mode = Page::get_variable_mode($variable_post_id);
 			$s 									 .= Preview::getVariableCssCode('global', ':root', $variable_mode);
@@ -1315,7 +1315,7 @@ class HelperFunctions {
 		$data_helper->rec_update_data_id_to_new_id( $data, $style_blocks, $root, null );
 		$data = $data_helper->temp_data;
 		$style_blocks = $data_helper->temp_styles;
-		$root = $data_helper->temp_ids[ $root ];
+		$root = isset($data_helper->temp_ids[ $root ])?$data_helper->temp_ids[ $root ]:false;
 
 		$params = array( 
 			'blocks' => $data,
@@ -2969,6 +2969,10 @@ class HelperFunctions {
 	 * @param string|string[] $access_level The access level to check access.
 	 */
 	public static function has_access( $access_level ) {
+		if ( ! function_exists( 'wp_get_current_user' ) ) {
+			return false;
+		}
+
 		$user       = wp_get_current_user();
 		$roles      = $user->roles;
 		$has_access = false;
@@ -3257,11 +3261,11 @@ class HelperFunctions {
 	 * @return void
 	 */
 	public static function store_error_log( $error_text ) {
-		$kirki_version = KIRKI_VERSION;
+		// $kirki_version = KIRKI_VERSION;
 
-		self::http_get(
-			KIRKI_CORE_PLUGIN_URL . "?log_data=error&version=$kirki_version&error_type=php&error_text=$error_text"
-		);
+		// self::http_get(
+		// 	KIRKI_CORE_PLUGIN_URL . "?log_data=error&version=$kirki_version&error_type=php&error_text=$error_text"
+		// );
 	}
 
 	/**
@@ -4302,5 +4306,16 @@ class HelperFunctions {
 				$val *= 1024;
 		}
 		return $val;
+	}
+
+	public static function get_kirki_full_canvas_template_path(){
+		return self::normalize_kirki_full_canvas_template_path(KIRKI_FULL_CANVAS_TEMPLATE_PATH);
+	}
+	public static function normalize_kirki_full_canvas_template_path($path){
+		// replace if has kirki-pro => kirki
+		if (strpos($path, 'kirki-pro') !== false) {
+			$path = str_replace('kirki-pro', 'kirki', $path);
+		}
+		return $path;
 	}
 }

@@ -20,6 +20,7 @@ use Kirki\Ajax\WordpressData;
  * ExceptionalElements Class
  */
 class ExceptionalElements {
+private $anchor_default_attribute = 'kirki-anchor="true"';
 
 	/**
 	 * Get this exceptional element
@@ -337,6 +338,10 @@ class ExceptionalElements {
 					return $this->navigation_element( $this_data, $attributes, $options );
 			}
 
+			case 'navigation-item': {
+				return $this->navigation_item_element($this_data, $attributes, $options);
+			}
+
 			case 'navigation-items': {
 					return $this->navigation_items_element( $this_data, $attributes, $options );
 			}
@@ -381,6 +386,10 @@ class ExceptionalElements {
 
 		$tag = isset( $this_data['properties'], $this_data['properties']['tag'] ) ? $this_data['properties']['tag'] : 'a';
 
+		if ( $tag === 'a' ) {
+			$attributes .= ' ' . $this->anchor_default_attribute;
+		}
+
 		$children_markup = $this->construct_children_markup( isset( $this_data['children'] ) ? $this_data['children'] : array(), $options );
 
 		return "<$tag $attributes id=\"$id\">
@@ -390,6 +399,11 @@ class ExceptionalElements {
 
 	private function navigation_element( $this_data, $attributes, $options ) {
 		$tag       = isset( $this_data['properties'], $this_data['properties']['tag'] ) ? $this_data['properties']['tag'] : 'a';
+
+		if ( $tag === 'a' ) {
+			$attributes .= ' ' . $this->anchor_default_attribute;
+		}
+
 		$hamburger = isset($this_data['properties']['navigation']['hamburger']) ? $this_data['properties']['navigation']['hamburger'] : false;
 
 		if ( ! is_array( $options ) ) {
@@ -405,6 +419,7 @@ class ExceptionalElements {
 				'navigation' => array(
 					'id'        => $this_data['id'],
 					'hamburger' => $hamburger,
+					'showNavigationChildrenOn' => isset($this_data['properties']['navigation']['showNavigationChildrenOn']) ? $this_data['properties']['navigation']['showNavigationChildrenOn'] : 'hover',
 				),
 			)
 		);
@@ -416,17 +431,70 @@ class ExceptionalElements {
 			</$tag>";
 	}
 
-	private function navigation_items_element( $this_data, $attributes, $options ) {
+	private function navigation_item_element($this_data, $attributes, $options)
+	{
+		$tag = isset($this_data['properties'], $this_data['properties']['tag']) ? $this_data['properties']['tag'] : 'a';
 
-		$tag = isset( $this_data['properties'], $this_data['properties']['tag'] ) ? $this_data['properties']['tag'] : 'a';
+		if ( $tag === 'a' ) {
+			$attributes .= ' ' . $this->anchor_default_attribute;
+		}
 
-		$extra_attr = isset( $options['inside_navigation'] ) && $options['inside_navigation'] ? 'kirki-navigation-hide="true"' : '';
+		$children_markup = $this->construct_children_markup(isset($this_data['children']) ? $this_data['children'] : array(), $options);
+
+		$extra_attributes = '';
+
+		$show_on = 'hover';
+
+		// check showNavigationChildrenOn is hover or click or always then add kirki-navigation-item-trigger-on='hover'/'click'/'always'
+		if (isset($this_data['properties']['navigationItem']['showNavigationChildrenOn'])) {
+			$show_on = $this_data['properties']['navigationItem']['showNavigationChildrenOn'];
+			$extra_attributes .= ' kirki-navigation-item-trigger-on="' . $show_on . '"';
+		} else if (isset($options['navigation']['showNavigationChildrenOn'], $options['navigation']['hamburger']) && $options['navigation']['hamburger']) {
+			$show_on = $options['navigation']['showNavigationChildrenOn'];
+			$extra_attributes .= ' kirki-navigation-item-trigger-on="' . $show_on . '"';
+		} else {
+			$extra_attributes .= ' kirki-navigation-item-trigger-on="hover"';
+		}
+
+		if ('always' !== $show_on) {
+			$extra_attributes .= ' kirki-navigation-item-dismiss-on="' . ($this_data['properties']['navigationItem']['hideNavigationChildrenOn'] ?? 'mouseleave') . '"';
+		}
+
+		if (!$options) {
+			$options = array();
+		}
+
+		// add if kirki-navigation="nav-item" has in $this_data['properties']['attributes'] then set inside_nav_item = true
+		$options = array_merge(
+			$options,
+			array(
+				'inside_nav_item' => isset($this_data['properties']['attributes']['kirki-navigation']) && $this_data['properties']['attributes']['kirki-navigation'] === 'nav-item',
+			)
+		);
+
+		$children_markup = $this->construct_children_markup(isset($this_data['children']) ? $this_data['children'] : array(), $options);
+
+		return "<$tag $attributes $extra_attributes>
+				$children_markup
+			</$tag>";
+	}
+
+	private function navigation_items_element($this_data, $attributes, $options)
+	{
+
+		$tag = isset($this_data['properties'], $this_data['properties']['tag']) ? $this_data['properties']['tag'] : 'a';
+
+		if ( $tag === 'a' ) {
+			$attributes .= ' ' . $this->anchor_default_attribute;
+		}
+
+		$extra_attr = isset($options['inside_navigation']) && $options['inside_navigation'] ? 'kirki-navigation-hide="true"' : '';
 
 		if (isset($options['navigation']['hamburger']) && $options['navigation']['hamburger']) {
 			$extra_attr .= ' kirki-navigation-type="close"';
 		}
 
-		if ( ! $options ) {
+		if (!$options) {
 			$options = array();
 		}
 		$options = array_merge(
@@ -436,11 +504,30 @@ class ExceptionalElements {
 			)
 		);
 
-		$children_markup = $this->construct_children_markup( isset( $this_data['children'] ) ? $this_data['children'] : array(), $options );
+		$children_markup = $this->construct_children_markup(isset($this_data['children']) ? $this_data['children'] : array(), $options);
+		// check it has kirki-menu-wrapper: true as attribute
+		// if (isset($this_data['properties']['attributes']['kirki-menu-wrapper']) && $this_data['properties']['attributes']['kirki-menu-wrapper'] === 'true') {
+		if (isset($options['inside_nav_item']) && $options['inside_nav_item'] === true) {
+			// Match the content inside class="..." and data-kirki="..."
+			preg_match('/class="([^"]+)"/', $attributes, $classMatch);
+			preg_match('/data-kirki="([^"]+)"/', $attributes, $dataMatch);
 
-		return "<$tag $attributes $extra_attr>
-				$children_markup
-			</$tag>";
+			$class = $classMatch[1] ?? null;
+			$data_kirki = $dataMatch[1] ?? null;
+
+			return "
+							<div kirki-menu-wrapper-div='true'>
+							<$tag class='$class' data-kirki='$data_kirki'>
+							$children_markup
+							</$tag>
+							</div>
+					 ";
+		} else {
+			return "<$tag $attributes $extra_attr>
+			$children_markup
+		</$tag>";
+		}
+
 	}
 
 	private function form_element( $this_data, $attributes, $options ) {
@@ -558,7 +645,7 @@ class ExceptionalElements {
 			$preload_link = $this->get_preload_link( $href, $this_data );
 		}
 
-		return '<a ' . $attributes . ' href="' . $href . '" >' . $this->construct_children_markup( isset( $this_data['children'] ) ? $this_data['children'] : array(), $options ) . '</a>' . $preload_link;
+		return '<a ' . $attributes . ' ' . $this->anchor_default_attribute . ' href="' . $href . '" >' . $this->construct_children_markup( isset( $this_data['children'] ) ? $this_data['children'] : array(), $options ) . '</a>' . $preload_link;
 	}
 
 	private function button_element( $this_data, $attributes, $options ) {
@@ -578,6 +665,7 @@ class ExceptionalElements {
 		$tag             = isset( $this_data['properties'], $this_data['properties']['tag'] ) ? $this_data['properties']['tag'] : 'button';
 		if ( $href ) {
 			$tag = 'a';
+			$attributes .= ' ' . $this->anchor_default_attribute;
 		}
 
 		return "<$tag $attributes href=\"$href\">

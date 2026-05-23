@@ -1,23 +1,26 @@
 === Kirki – Freeform Page Builder, Website Builder & Customizer ===
 Contributors: themeum
-Donate link: https://kirki.com
-Tags: page builder, website builder, drag and drop, form builder, freeform canvas
+Tags: page builder, website builder, drag and drop, visual editor, freeform canvas
 Requires at least: 5.3
-Tested up to: 6.9
-Stable tag: 6.0.3
+Tested up to: 7.0
+Stable tag: 6.0.9
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Freeform page builder & website builder for WordPress. Infinite canvas for complex, interactive websites. Built-in forms, animations & Customizer.
+Freeform page builder & website builder for WordPress. Design freely on an infinite canvas — no coding required, works with any theme. Built-in forms, animations & Customizer.
 
 == Description ==
 
-[Kirki](https://kirki.com/) is a **freeform visual builder for WordPress and an advanced theme customizer** that lets you design and build complete websites visually — without coding.
+[Kirki](https://kirki.com/) is a **freeform visual builder for WordPress** that lets you design and build complete websites visually — without coding.
 
-Unlike traditional page builders, Kirki uses an **infinite freeform canvas**, giving you full creative freedom without rigid grids or layout restrictions.
+Kirki's **infinite freeform canvas** gives you full creative freedom — no rigid grids, no column restrictions, just your vision on an open canvas.
 
 Build landing pages, business websites, blogs, and full websites with responsive controls, dynamic content, and powerful design tools — all inside WordPress.
+
+**Watch Kirki in action:**
+
+https://www.youtube.com/watch?v=ofDMD1j4A2Y
 
 ---
 
@@ -116,7 +119,7 @@ Extend WordPress customization with powerful controls.
 - Freelancers building client websites
 - Agencies managing multiple projects
 - Developers extending WordPress functionality
-- Anyone looking for a **no-code visual builder for WordPress**
+- Anyone looking for a **no-code page builder or visual builder for WordPress**
 
 ---
 
@@ -187,6 +190,75 @@ Nothing. All existing Customizer controls are fully preserved. Your current setu
 ---
 
 == Changelog ==
+
+= 6.0.9 =
+* New: Added support for custom timing editing in slider animations.
+* Update: Updated the custom interaction timeline behavior for smoother editing and playback.
+* Update: Improved color picker performance and responsiveness.
+* Update: Improved comment behavior and shortcut handling.
+* Update: Updated the Kirki Apps settings design.
+* Fix: Fixed drawing issues caused by excessively large canvas sizes.
+* Fix: Fixed inconsistencies with dragging cursor and controller interactions.
+* Fix: Fixed device selection behavior when clicking outside elements.
+* Fix: Fixed fill and gradient controller positioning issues.
+* Fix: Fixed layer panel icon reset and undo behavior issues.
+* Fix: Fixed nested rich text editing and selection behavior.
+* Fix: Fixed symbol editing freeze issues after style synchronization.
+* Fix: Fixed issues caused by deleting elements during active color picking.
+* Fix: Fixed textarea height styling issues in form blocks.
+
+= 6.0.8 =
+* Fix: Resolved css variable enqueue issue on the custom template pages.
+* Fix: Fixed collection pagination issue for filtered data.
+* Fix: Solved random issues.
+
+= 6.0.7 =
+* Update: Centralized symbol edit canvas positioning across all symbols.
+* Update: Added viewport-aware symbol editing for tablet and mobile.
+* Update: Improved typography controls and CSS unit handling.
+* Update: Added support for special max-width values and clamp() parsing.
+* Update: Added CSS variable duplication support.
+* Update: Refactored SVG rendering with dedicated InlineSvg handling.
+* Update: Improved Liquid Glass rendering and viewport isolation.
+* Fix: Unauthenticated Limited Arbitrary File Read and Deletion via downloadZIP
+* Fix: Missing Authorization to Authenticated (Subscriber+) Sensitive Form Submission Data Exposure via 'kirki_wp_admin_get_apis' Action Description
+* Fix: Unauthenticated Privilege Escalation via 'handle_forgot_password'
+* Fix: Fixed auto-scroll for unmounted selected elements in the Layers panel.
+* Fix: Rich text editing no longer blocks canvas zoom and scroll across viewports.
+* Fix: Improved overlay behavior during typing and dragging interactions.
+* Fix: Prevented tall symbol content from being clipped in symbol edit mode.
+* Fix: Resolved forgot password content and reset URL issues.
+* Fix: Corrected margin and padding value normalization.
+* Fix: Improved border width and mixed unit handling.
+* Fix: Fixed viewport activation and device delete flow issues.
+* Fix: Improved Form submission data array serialization and multiple select handling.
+* Fix: Interaction ScrollHeight and ScrollWidth property set issue.
+
+= 6.0.6 =
+* Update: Enhanced the inline text editing and styling experience.
+* Update: Added support for variable mode selection in components.
+* Fix: Fixed a security vulnerability in media search.
+* Fix: Improved code preview and code editor functionality.
+
+= 6.0.5 =
+* Update: Improved element comment coordinate positioning
+* Update: Enhanced island toolbar functionality
+* Update: Improved grid inline control area settings and track unit selection
+* Update: Improved navigation element functionality
+* Update: Enhanced code element functionality
+* Update: Improved variable and text addition workflow
+* Update: Collection item post_data and modified_data are not updating correctly for scheduled posts
+* Fix: Fixed handling of multi-select values when styleBlockId is missing
+* Fix: Resolved component name overflow in component list items
+* Fix: Fixed canvas repositioning issue during component editing
+* Fix: Fixed collaboration endpoint unauthorized access
+* Fix: Fixed grid x,y alignment property update issue
+
+= 6.0.4 =
+* Fix: Resolved an Uncaught SyntaxError in webfontloader.min.js
+* Fix: Broken woocommerce catalog product title
+* Update: Updated frontend script enqueue handling for Kirki-based designs.
+* Improvement: Enhanced text element tag selection; now supports span, p, and h1–h6
 
 = 6.0.3 =
 * Fix: WebFontLoader JavaScript file not found issue resolved.

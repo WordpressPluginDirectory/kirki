@@ -11,6 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
+use Kirki\Ajax\Page;
+use Kirki\Frontend\Preview\Preview;
 use Kirki\HelperFunctions;
 
 /**
@@ -30,6 +32,40 @@ class TheFrontendHooks {
 		add_action( 'wp_footer', array( $this, 'load_custom_footer' ), 1, 1 );    // call if template has get_header method.
 		add_action( 'wp_footer', array( $this, 'add_before_body_tag_end' ) );
 		add_action( 'template_redirect', array( $this, 'may_be_change_header_footer' ) );
+	}
+
+	private function should_load_assets() {
+		$should_load = false;
+
+		/**
+		 * Allow TemplateRedirection (or others) to force-load assets when the current
+		 * request is being served by a kirki template.
+		 */
+		$should_load = $should_load || (bool) apply_filters( 'kirki_assets_should_load', false );
+
+		// TheFrontend sets this on the 'wp' action after running is_kirki_type_data().
+		if ( isset( $GLOBALS['kirki_assets_should_load_for_request'] ) ) {
+			$should_load = $should_load || (bool) $GLOBALS['kirki_assets_should_load_for_request'];
+		}
+
+		// If custom header/footer is present, frontend needs kirki assets.
+		global $kirki_custom_header, $kirki_custom_footer;
+		$kirki_custom_header = HelperFunctions::get_page_custom_section( 'header' );
+		$kirki_custom_footer = HelperFunctions::get_page_custom_section( 'footer' );
+
+		$has_custom_header = is_string( $kirki_custom_header ) ? ( '' !== trim( $kirki_custom_header ) ) : ! empty( $kirki_custom_header );
+		$has_custom_footer = is_string( $kirki_custom_footer ) ? ( '' !== trim( $kirki_custom_footer ) ) : ! empty( $kirki_custom_footer );
+		if ( $has_custom_header || $has_custom_footer ) {
+			$should_load = true;
+		}
+
+		// If current page is a kirki template, load assets.
+		$template_data = HelperFunctions::get_template_data_if_current_page_is_kirki_template();
+		if ( $template_data ) {
+			$should_load = true;
+		}
+
+		return $should_load;
 	}
 
 	public function may_be_change_header_footer() {
@@ -59,8 +95,21 @@ class TheFrontendHooks {
 	}
 
 	public function load_assets() {
+		if ( ! $this->should_load_assets() ) {
+			return;
+		}
+
 		wp_enqueue_script( 'kirki', KIRKI_ASSETS_URL . 'js/kirki.min.js', array( 'wp-i18n' ), KIRKI_VERSION, true );
 		wp_enqueue_style( 'kirki', KIRKI_ASSETS_URL . 'css/kirki.min.css', null, KIRKI_VERSION );
+		
+		$this->load_variables();
+	}
+
+	private function load_variables(){
+		$variable_post_id = HelperFunctions::get_post_id_if_possible_from_url();
+		$variable_mode = Page::get_variable_mode($variable_post_id);
+		$variable_css = Preview::getVariableCssCode('global', ':root', $variable_mode, false);
+		wp_add_inline_style( 'kirki', $variable_css );
 	}
 
 	/**
@@ -118,7 +167,7 @@ class TheFrontendHooks {
     </script>';
 
 		// smooth scroll
-		if ( ! $this->call_from == 'iframe' ) {
+		if ( 'iframe' !== $this->call_from ) {
 			$s .= HelperFunctions::get_smooth_scroll_script();
 		}
 
