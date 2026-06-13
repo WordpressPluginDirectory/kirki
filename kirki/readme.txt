@@ -1,20 +1,20 @@
 === Kirki – Freeform Page Builder, Website Builder & Customizer ===
 Contributors: themeum
-Tags: page builder, website builder, drag and drop, visual editor, freeform canvas
-Requires at least: 5.3
+Tags: page builder, website builder, drag and drop, form builder, freeform canvas
+Requires at least: 5.9
 Tested up to: 7.0
-Stable tag: 6.0.9
+Stable tag: 6.0.10
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Freeform page builder & website builder for WordPress. Design freely on an infinite canvas — no coding required, works with any theme. Built-in forms, animations & Customizer.
+Freeform page builder & website builder for WordPress. Infinite canvas for complex, interactive websites. Built-in forms, animations & Customizer.
 
 == Description ==
 
-[Kirki](https://kirki.com/) is a **freeform visual builder for WordPress** that lets you design and build complete websites visually — without coding.
+[Kirki](https://kirki.com/) is a **freeform visual builder for WordPress and an advanced theme customizer** that lets you design and build complete websites visually — without coding.
 
-Kirki's **infinite freeform canvas** gives you full creative freedom — no rigid grids, no column restrictions, just your vision on an open canvas.
+Unlike traditional page builders, Kirki uses an **infinite freeform canvas**, giving you full creative freedom without rigid grids or layout restrictions.
 
 Build landing pages, business websites, blogs, and full websites with responsive controls, dynamic content, and powerful design tools — all inside WordPress.
 
@@ -119,7 +119,7 @@ Extend WordPress customization with powerful controls.
 - Freelancers building client websites
 - Agencies managing multiple projects
 - Developers extending WordPress functionality
-- Anyone looking for a **no-code page builder or visual builder for WordPress**
+- Anyone looking for a **no-code visual builder for WordPress**
 
 ---
 
@@ -190,6 +190,19 @@ Nothing. All existing Customizer controls are fully preserved. Your current setu
 ---
 
 == Changelog ==
+
+= 6.0.10 =
+* New: Added timeline scrubbing support for previewing custom animations.
+* New: Added variable support for Padding and Margin controls.
+* New: Introduced breakpoint virtualization for better performance and scalability.
+* Update: Improved Collection API call performance and optimizations.
+* Update: Collection reference and multi-reference search functionality improvements.
+* Update: Improved background color shade generation during color selection.
+* Update: Added variable support for conic gradient color stops.
+* Update: Improved variables, font-family support, and HTML generation for the Figma to Kirki plugin.
+* Fix: Fixed permission and rewrite rule issues affecting Utility Pages.
+* Fix: Figma to Kirki variable, font-family, image paste issue.
+* Fix: Resolved pinch-to-zoom and zoom-out issues affecting Safari browsers.
 
 = 6.0.9 =
 * New: Added support for custom timing editing in slider animations.
