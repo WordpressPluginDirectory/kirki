@@ -5,14 +5,13 @@ namespace Kirki\App\Services;
 defined('ABSPATH') || exit;
 
 use Exception;
-use Kirki\App\Constants\CollaborationConnectionType;
-use Kirki\App\Constants\CollaborationParent;
+use Kirki\App\Constants\PageContentTypes;
 use Kirki\App\Constants\PageMetaKeys;
 use Kirki\App\Constants\PostTypes;
-use Kirki\App\DTO\Collaboration\CreateCollaborationDTO;
 use Kirki\App\DTO\Page\EditorPagePayloadDTO;
 use Kirki\App\DTO\Page\EditPageDTO;
 use Kirki\App\DTO\Page\EditPopupDTO;
+use Kirki\App\DTO\Page\PageFilterDTO;
 use Kirki\App\DTO\Page\PagePayloadDTO;
 use Kirki\App\DTO\Page\TogglePageSymbolDTO;
 use Kirki\App\Models\Page as PageModel;
@@ -21,6 +20,8 @@ use Kirki\App\Supports\Canvas;
 use Kirki\App\Supports\Facades\GlobalData;
 use Kirki\App\Supports\Facades\Page;
 use Kirki\App\Supports\Template;
+use Kirki\Framework\Database\Query\Paginator;
+use Kirki\Framework\Database\Query\QueryBuilder;
 use Kirki\Framework\Http\Response;
 
 use function Kirki\App\soft_flush_rewrite_rules;
@@ -28,19 +29,6 @@ use function Kirki\Framework\collection;
 
 class PageService 
 {
-	/** @var CollaborationService */
-    protected $collaboration_service;
-
-    public function __construct(CollaborationService $collaboration_service) 
-	{
-        $this->collaboration_service = $collaboration_service;
-    }
-
-	public static function create()
-	{
-		return new static(new CollaborationService());
-	}
-
 	/**
 	 * Create a new page.
 	 * 
@@ -103,6 +91,19 @@ class PageService
 			Template::assign_custom_page_template($page->ID, $payload->custom_template['url']);
 		}
 
+		if (!empty($payload->content_manager_collection_id) && !empty($payload->content_manager_page_kind)) {
+			try {
+				(new ContentManagerTemplateService())->initialize(
+					$page->ID,
+					(int) $payload->content_manager_collection_id,
+					$payload->content_manager_page_kind
+				);
+			} catch (\Throwable $error) {
+				PageModel::delete_post($page->ID, true);
+				throw $error;
+			}
+		}
+
 		return $page;
 	}
 
@@ -136,7 +137,7 @@ class PageService
 		}
 
 		if (!is_null($payload->styleBlocks)) {
-			Page::save_random_global_style_blocks($popup->ID, $payload->styleBlocks);
+			Page::save_style_blocks($popup->ID, $payload->styleBlocks);
 		}
 
 		if (!is_null($payload->usedFonts)) {
@@ -149,121 +150,82 @@ class PageService
     /**
      * Save editor page data
      * 
-     * @return int|false
+     * @return int|false - when not staging return false otherwise return staging version
      */
-    public function save_page_data(EditorPagePayloadDTO $payload) 
+    public function save_page_data(EditorPagePayloadDTO $payload, string $page_content_type) 
     {
         if (is_null($payload->page) || empty($payload->data)) {
             return false;
         }
 
+		Page::save_editor_mode($payload->page->ID);
+
         $staging_version = false;
         $page_data = $payload->data;
 
 		if($payload->is_staging) {
-			list(
-				'staging_version' => $staging_version,
-				'data'            => $page_data
-			) = Page::save_staging_data($payload);
+			$staging_version = Page::get_most_recent_stage_version($payload->page->ID);
+			Page::set_last_edited_datetime_of_stage_version($payload->page->ID);
 		}
-		
-		if (isset($page_data['styles'])) {
-			$global_style_blocks_for_collaboration = [];
 
-			foreach ($page_data['styles'] as $key => $style_block) {
-				if (
-                    (isset($style_block['isDefault']) && $style_block['isDefault'] === true) 
-                    || (isset($style_block['isGlobal']) && $style_block['isGlobal'] === true)
-                ) {
-					if (isset($style_block['fromStage'])){
-						unset($page_data['styles'][$key]['fromStage']);
-						$global_style_blocks_for_collaboration[$key] = $page_data['styles'][$key];
-
-						continue;
-					}
-
-                    unset($page_data['styles'][$key]);
+		switch ($page_content_type) {
+			case PageContentTypes::BLOCKS:
+				Page::save_blocks($payload->page->ID, ['blocks' => $page_data['blocks'] ?? []], $staging_version);
+				break;
+			case PageContentTypes::STYLES:
+				$styles = $page_data['styles'] ?? [];
+				Page::save_style_blocks($payload->page->ID, $styles, $staging_version);
+				break;
+			case PageContentTypes::USED_STYLES:
+				Page::save_used_global_style_block_ids($payload->page->ID, $page_data['usedStyles'] ?? [], $staging_version);
+				break;
+			case PageContentTypes::USED_STYLE_IDS_RANDOM:
+				Page::save_used_style_block_ids($payload->page->ID, $page_data['usedStyleIdsRandom'] ?? [], $staging_version);
+				break;
+			case PageContentTypes::USED_FONTS:
+				Page::save_used_font_list($payload->page->ID, $page_data['usedFonts'] ?? [], $staging_version);
+				break;
+			case PageContentTypes::CUSTOM_FONTS:
+				// Save others data if isset. this is only used for template import
+				if (!isset($page_data['customFonts'])) {
+					break;
 				}
-			}
+				
+				$custom_fonts = GlobalData::get_global_custom_fonts();
 
-			if (
-				count($global_style_blocks_for_collaboration) > 0 && 
-				$payload->session_id && $payload->is_staging === false
-			) {
-				// Cause template import also called this method without session_id
-					$create_collaboration_dto = CreateCollaborationDTO::from_array([
-						'session_id' => $payload->session_id,
-						'parent' => CollaborationParent::GLOBAL,
-						'parent_id' => 0,
-						'data' => [
-							'type'    => CollaborationConnectionType::UPDATE_GLOBAL_STYLE,
-							'payload' => ['styleBlock' => $global_style_blocks_for_collaboration],
-						],
-					]);
+				foreach ($page_data['customFonts'] as $key => $custom_font) {
+					$custom_fonts[$key] = $custom_font;
+				}
 
-					$this->collaboration_service->save_action($create_collaboration_dto);
-			}
+				GlobalData::update_global_custom_fonts($custom_fonts);
+				break;
+			case PageContentTypes::VIEWPORT_LIST:
+				// Save others data if isset. this is only used for template import
+				if (!isset($page_data['viewportList'])) {
+					break;
+				}
 
-			Page::update_page_styleblocks($payload->page->ID, $page_data['styles']);
-			unset($page_data['styles']);
-		}
+				$controller_data = GlobalData::get_global_ui_controller();
 
-		if (isset($page_data['usedStyles'])) {
-			Page::save_used_style_block_ids($payload->page->ID, $page_data['usedStyles']);
-			unset($page_data['usedStyles']);
-		}
+				if (!$controller_data) {
+					$controller_data = [
+						'viewport' => [
+							'active' => 'md',
+							'defaults'=> ["md", "tablet", "mobileLandscape", "mobile"],
+							'list' => $page_data['viewportList'],
+							'mdWidth' => 1200,
+							"scale" => 1,
+							"width" => 2484,
+							"zoom" => 1
+						]
+					];
+				}
 
-		if (isset($page_data['usedStyleIdsRandom'])) {
-			Page::save_random_used_style_block_ids($payload->page->ID, $page_data['usedStyleIdsRandom']);
-			unset($page_data['usedStyleIdsRandom']);
-		}
-
-		if (isset($page_data['usedFonts'])) {
-			Page::save_used_font_list($payload->page->ID, $page_data['usedFonts']);
-			unset( $page_data['usedFonts'] );
-		}
-
-		if (isset($page_data['customFonts'])) {
-			//save others data if isset. this is for template import
-			$custom_fonts = GlobalData::get_global_custom_fonts();
-
-			foreach ($page_data['customFonts'] as $key => $custom_font) {
-				$custom_fonts[$key] = $custom_font;
-			}
-
-			GlobalData::update_global_custom_fonts($custom_fonts);
-			unset($page_data['customFonts']);
-		}
-		
-		if (isset($page_data['viewportList'])) {
-			// Save others data if isset. this is for template import
-			$controller_data = GlobalData::get_global_ui_controller();
-
-			if (!$controller_data) {
-				$controller_data = [
-					'viewport' => [
-						'active' => 'md',
-						'defaults'=> ["md", "tablet", "mobileLandscape", "mobile"],
-						'list' => $page_data['viewportList'],
-						'mdWidth' => 1200,
-						"scale" => 1,
-						"width" => 2484,
-						"zoom" => 1
-					]
-				];
-			} elseif (isset($controller_data['viewport'], $controller_data['viewport']['list'])) {
 				$controller_data['viewport']['list'] = $page_data['viewportList'];
-			}
 
-			GlobalData::update_global_ui_controller($controller_data);
-			unset( $page_data['viewportList'] );
+				GlobalData::update_global_ui_controller($controller_data);
+				break;
 		}
-
-		if (isset($page_data['blocks'])) {
-			Page::save_blocks($payload->page->ID, ['blocks' => $page_data['blocks']]);
-		}
-
-		Page::save_editor_mode($payload->page->ID);
 
 		return $staging_version;
     }
@@ -327,10 +289,10 @@ class PageService
 		/**
 		 * Also duplicate this page style blocks if exists
 		 */
-		$current_random_post_styles = PostMeta::get_meta_value($current_page->ID, PageMetaKeys::STYLE_BLOCK_RANDOM, []);
+		$current_post_styles = PostMeta::get_meta_value($current_page->ID, PageMetaKeys::STYLE_BLOCKS, []);
 
-		if (!empty($current_random_post_styles)) {
-			Page::save_random_global_style_blocks($new_page->ID, $current_random_post_styles);
+		if (!empty($current_post_styles)) {
+			Page::save_style_blocks($new_page->ID, $current_post_styles);
 		}
 
 		$current_used_fonts = PostMeta::get_meta_value($current_page->ID, PageMetaKeys::USED_FONT_LIST, []);
@@ -358,5 +320,32 @@ class PageService
         }
 
 		return $is_deleted;
+	}
+
+	/**
+	 * Get all pages
+	 * 
+	 * @param PageFilterDTO $filter_dto
+	 * 
+	 * @return Paginator
+	 */
+	public function paginated(PageFilterDTO $filter_dto)
+	{
+		$front_page_id = $filter_dto->current_page === 1 ? Page::get_front_page_id() : 0;
+
+		$paginated = PageModel::query()
+			->with([
+				'meta' => function (QueryBuilder $query) {
+                $query->where_in('meta_key', PageMetaKeys::get_single_post_keys());
+            }])
+			->filter_post_type($filter_dto->post_types)
+			->filter_status($filter_dto->post_statuses)
+			->where_not_in('ID', $filter_dto->exclude_page_ids)
+			->search($filter_dto->query)
+			->order_by_raw('CASE WHEN `ID` = %d THEN 0 ELSE 1 END', [$front_page_id])
+			->order_by('ID', 'DESC')
+			->paginate($filter_dto->limit, $filter_dto->current_page);
+	
+		return $paginated;
 	}
 }

@@ -352,6 +352,9 @@ class Page {
 	 * This function is called from EDITOR panel
 	 *
 	 * @return void wp_send_json.
+	 * 
+	 * @deprecated
+	 * @see \Kirki\App\Resources\PageContentResource::class
 	 */
 	public static function get_page_blocks_and_styles() {
         //phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -386,33 +389,6 @@ class Page {
 			$content                     = get_the_content( null, false, $post_id );
 			$post_meta['content_length'] = strlen( $content );
 			wp_send_json( $post_meta );
-		}
-		die();
-	}
-
-	public static function get_page_html() {
-        //phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$post_id = (int) HelperFunctions::sanitize_text( isset( $_GET['id'] ) ? $_GET['id'] : '' );
-		if ( ! empty( $post_id ) ) {
-			$post_meta = get_post_meta( $post_id, 'kirki', true );
-			if ( ! $post_meta ) {
-				$post_meta           = array();
-				$post_meta['blocks'] = null;
-			}
-
-			$params = array(
-				'blocks'                 => $post_meta['blocks'],
-				'style_blocks'           => null,
-				'root'                   => 'root',
-				'post_id'                => false,
-				'options'                => array( 'check_access' => false ),
-				'get_style'              => false,
-				'get_variable'           => false,
-				'should_take_app_script' => false,
-			);
-
-			$html = HelperFunctions::get_html_using_preview_script( $params );
-			wp_send_json( $html );
 		}
 		die();
 	}
@@ -502,6 +478,8 @@ class Page {
 	 * Fetch page list
 	 *
 	 * @return void wp_send_json.
+	 * @deprecated
+	 * @see \Kirki\App\Http\Controllers\Api\PageController::paginated()
 	 */
 	public static function fetch_list_api() {
         //phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -520,6 +498,10 @@ class Page {
 		wp_send_json( $page_list );
 	}
 
+	/**
+	 * @deprecated
+	 * @see \Kirki\App\Http\Controllers\Api\PageController::page_panel_pages()
+	 */
 	public static function get_pages_for_pages_panel() {
 		// Sanitize and validate inputs
 		$query       = HelperFunctions::sanitize_text( isset( $_GET['query'] ) ? $_GET['query'] : null );
@@ -560,6 +542,8 @@ class Page {
 	 * Fetch post list for search
 	 *
 	 * @return void wp_send_json.
+	 * @deprecated
+	 * @see \Kirki\App\Http\Controllers\Api\PageController::get_data_list_for_template_edit_search_flyout()
 	 */
 	public static function get_data_list_for_template_edit_search_flyout() {
 		$query      = HelperFunctions::sanitize_text( isset( $_GET['query'] ) ? $_GET['query'] : '' );
@@ -626,6 +610,8 @@ class Page {
 	 * @param string  $post_status post status.
 	 *
 	 * @return void|array
+	 * @deprecated
+	 * @see \Kirki\App\Services\PageService::paginated()
 	 */
 	public static function fetch_list( $type = 'page', $internal = true, $post_status = array( 'publish', 'draft' ), $query = null, $numberposts = 20, $current_page = 1, $exclude_post_ids = array() ) {
 		$pages = array();
@@ -683,6 +669,8 @@ class Page {
 	 * Get current page data
 	 *
 	 * @return void wp_send_json.
+	 * @deprecated
+	 * @see \Kirki\App\Http\Controllers\Api\PageController::get_current_page()
 	 */
 	public static function get_current_page_data() {
         //phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -892,6 +880,12 @@ class Page {
 		return array_unique( $all_used_style_ids );
 	}
 
+	/**
+	 * Validate post slug
+	 *
+	 * @deprecated
+	 * @see \Kirki\App\Http\Controllers\Api\PostController::validate_wp_post_slug()
+	 */
 	public static function validate_wp_post_slug() {
         //phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$post_id = (int) HelperFunctions::sanitize_text( isset( $_GET['post_id'] ) ? $_GET['post_id'] : '' );

@@ -18,6 +18,8 @@ use Kirki\Ajax\WpAdmin;
 use Kirki\API\ContentManager\ContentManagerHelper;
 use Kirki\HelperFunctions;
 
+use function Kirki\Framework\dd;
+
 /**
  * Preview class
  */
@@ -114,6 +116,11 @@ class Preview extends ExceptionalElements {
 	 * $interactions for collect interaction elements data.
 	 */
 	private $interactions = array();
+
+	/**
+	 * $interaction library for collect interaction library elements data.
+	 */
+	private $interaction_library = array();
 	/**
 	 * $collections for collect collection elements data.
 	 */
@@ -211,6 +218,11 @@ class Preview extends ExceptionalElements {
 		'slider',
 		'slider_mask',
 		'slider_nav',
+		'tabs',
+		'tab_menu',
+		'tab',
+		'tab_content',
+		'tab_pane'
 	);
 
 	/**
@@ -628,13 +640,20 @@ class Preview extends ExceptionalElements {
 		$selector   = $this->getSelectorFromBlock( $block );
 		$variants   = $block['variant'];
 
+		$global_css = "";
+		$local_css = "";
+
 		foreach ( $variants as $key => $value ) {
 			$variant = explode( '_', $key );
 			if ( $variant[0] === $vp['id'] ) {
-				$css_string .= $this->createMediaQueryString( $selector, $key, $value, $vp );
+				if( $block && isset($block['isGlobalStyle']) && $block['isGlobalStyle'] === true){
+					$global_css .= $this->createMediaQueryString( $selector, $key, $value, $vp );
+				}else{
+					$local_css .= $this->createMediaQueryString( $selector, $key, $value, $vp );
+				}
 			}
 		}
-		return $css_string;
+		return $global_css . $local_css;
 	}
 
 	/**
@@ -728,6 +747,7 @@ class Preview extends ExceptionalElements {
 		$empty_vars .= $this->getVariableString( 'Videos', $this->videos );
 		$empty_vars .= $this->getVariableString( 'Tabs', $this->tabs );
 		$empty_vars .= $this->getVariableString( 'Interactions', $this->interactions );
+		$empty_vars .= $this->getVariableString( 'InteractionLibrary', $this->interaction_library );
 		$empty_vars .= $this->getVariableString( 'Collections', $this->collections );
 		$empty_vars .= $this->getVariableString( 'Forms', $this->forms );
 		$empty_vars .= $this->getVariableString( 'Dropdown', $this->dropdown );
@@ -1203,7 +1223,11 @@ class Preview extends ExceptionalElements {
 			$s_arr = explode( '-----', $s );
 			$s     = $s_arr[0] . '(' . $s_arr[1] . ')';
 		}
-		return str_contains( $s, 'before' ) || str_contains( $s, 'after' ) || str_contains( $s, 'placeholder' ) ? '::' . $s : ':' . $s;
+		if(in_array($s, KIRKI_PRESERVED_CLASS_LIST)){
+				return ".$s";
+		}
+		$pseudoClass = str_contains( $s, 'before' ) || str_contains( $s, 'after' ) || str_contains( $s, 'placeholder' ) ? '::' . $s : ':' . $s;
+		return $pseudoClass;
 	}
 
 
@@ -1246,7 +1270,9 @@ class Preview extends ExceptionalElements {
 			if ( isset( $properties['interactions'] ) ) {
 				$this->interactions[ $id ] = $this->updateClassListForInteractionFromStyleBlockId( $properties['interactions'], $element );
 			}
-
+			if(isset($properties['interactionLibrary'])) {
+				$this->interaction_library[ $id ] = $properties['interactionLibrary'];
+			}
 			if ( isset( $properties['code'], $properties['code']['javascript'] ) ) {
 				$this->custom_codes .= str_replace( 'KIRKI_TARGET_ELEMENT_ID', $id, $properties['code']['javascript'] );
 			}
@@ -1905,7 +1931,7 @@ class Preview extends ExceptionalElements {
 		return $html;
 	}
 
-	private function get_child_content_or_childrens( $this_data, $options ) {
+	public function get_child_content_or_childrens( $this_data, $options ) {
 		$html = '';
 		if ( ! isset( $this_data['children'] ) ) {
 			$html .= $this->print_content( $this_data, $options );
@@ -1914,7 +1940,13 @@ class Preview extends ExceptionalElements {
 			if ( isset( $this_data['id'], $this->data[ $this_data['id'] ], $this->data[ $this_data['id'] ]['children'] ) ) {
 				$child_count = count( $this->data[ $this_data['id'] ]['children'] );
 				for ( $i = 0; $i < $child_count; $i++ ) {
-					$html .= $this->recGenHTML( $this->data[ $this_data['id'] ]['children'][ $i ], $options );
+					$merged_options    = array_merge(
+							$options,
+							array(
+								'item_index' => $i,
+							)
+						);
+					$html .= $this->recGenHTML( $this->data[ $this_data['id'] ]['children'][ $i ], $merged_options );
 				}
 			}
 		}
@@ -2302,6 +2334,8 @@ class Preview extends ExceptionalElements {
 			$attr_str .= ' data-text_style="' . $this_element['properties']['textStyleId'] . '"';
 		}
 
+		// $attr_str .= ' data-kirki_name="' . $this_element['name'] . '"';
+
 		return $attr_str;
 	}
 
@@ -2338,10 +2372,16 @@ class Preview extends ExceptionalElements {
 	private function getClassNames( $this_element ) {
 		$class_array = array();
 
-		if ( isset( $this_element['styleIds'] ) ) {
-			$style_ids_count = count( $this_element['styleIds'] );
+		$style_ids = isset( $this_element['styleIds'] ) ? $this_element['styleIds'] : array();
+
+		$manageble_style_ids = isset( $this_element['properties'], $this_element['properties']['classesIds'] ) ? $this_element['properties']['classesIds'] : array();
+		// add in first in styleids
+		$style_ids = array_merge($manageble_style_ids, $style_ids);
+
+		if ( ! empty( $style_ids ) ) {
+			$style_ids_count = count( $style_ids );
 			for ( $i = 0; $i < $style_ids_count; $i++ ) {
-				$style_id = $this_element['styleIds'][ $i ];
+				$style_id = $style_ids[ $i ];
 				$s_block  = isset( $this->style_blocks[ $style_id ] ) ? $this->style_blocks[ $style_id ] : null;
 				if ( ! isset( $s_block ) ) {
 					continue;

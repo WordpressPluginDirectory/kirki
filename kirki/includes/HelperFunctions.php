@@ -21,6 +21,7 @@ use Kirki\Ajax\UserData;
 use Kirki\Ajax\Users;
 use Kirki\Ajax\WpAdmin;
 use Kirki\API\ContentManager\ContentManagerHelper;
+use Kirki\App\Supports\Facades\Page as FacadesPage;
 use Kirki\App\Supports\FileHandler;
 use Kirki\Frontend\Preview\DataHelper;
 use Kirki\Frontend\Preview\Preview;
@@ -177,6 +178,7 @@ class HelperFunctions
 	/**
 	 * @deprecated
 	 * @see Kirki\App\Services\PageService::save_page_data()
+	 * @see \Kirki\App\Services\GlobalDataService::save_styles()
 	 */
 	public static function save_kirki_data_to_db($post_id, $page_data, $is_staging = false)
 	{
@@ -184,7 +186,7 @@ class HelperFunctions
 		if ($is_staging) {
 			$data = Staging::save_page_staging_data_to_db($post_id, $page_data);
 			$page_data = $data['page_data'];
-			$version_where_saved = $data['version'];			
+			$version_where_saved = $data['version'];
 		}
 
 		if (isset($page_data['styles'])) {
@@ -279,7 +281,8 @@ class HelperFunctions
 	/**
 	 * 
 	 */
-	function abc() {
+	function abc()
+	{
 
 	}
 
@@ -297,38 +300,40 @@ class HelperFunctions
 	 */
 	public static function get_page_styleblocks($post_id, $stage_version = false)
 	{
-		$random_style_blocks = get_post_meta($post_id, KIRKI_GLOBAL_STYLE_BLOCK_META_KEY . '_random', true);
-		$global_style_blocks = self::get_global_data_using_key(KIRKI_GLOBAL_STYLE_BLOCK_META_KEY);
+		return FacadesPage::get_page_styleblocks($post_id, $stage_version);
 
-		$random_style_blocks = self::fix_duplicate_class_name_from_random_sbs($random_style_blocks, $global_style_blocks);
+		// $random_style_blocks = get_post_meta($post_id, KIRKI_GLOBAL_STYLE_BLOCK_META_KEY . '_random', true);
+		// $global_style_blocks = self::get_global_data_using_key(KIRKI_GLOBAL_STYLE_BLOCK_META_KEY);
 
-		$merged_style_blocks = array();
-		if ($random_style_blocks) {
-			$merged_style_blocks = array_merge($merged_style_blocks, $random_style_blocks);
-		}
-		if ($global_style_blocks) {
-			$merged_style_blocks = array_merge($merged_style_blocks, $global_style_blocks);
-		}
+		// $random_style_blocks = self::fix_duplicate_class_name_from_random_sbs($random_style_blocks, $global_style_blocks);
 
-		$published_version = Staging::get_published_stage_version($post_id);
-		if ($published_version && $stage_version !== $published_version) {
-			$staging_style_blocks = array();
-			$meta_key = Staging::get_staged_meta_name(KIRKI_GLOBAL_STYLE_BLOCK_META_KEY, $post_id, $stage_version);
-			$stage_style = get_post_meta($post_id, $meta_key, true);
-			if ($stage_style)
-				$staging_style_blocks = array_merge($staging_style_blocks, $stage_style);
+		// $merged_style_blocks = array();
+		// if ($random_style_blocks) {
+		// 	$merged_style_blocks = array_merge($merged_style_blocks, $random_style_blocks);
+		// }
+		// if ($global_style_blocks) {
+		// 	$merged_style_blocks = array_merge($merged_style_blocks, $global_style_blocks);
+		// }
 
-			$meta_key = $meta_key . '_random';
-			$stage_style = get_post_meta($post_id, $meta_key, true);
-			if ($stage_style)
-				$staging_style_blocks = array_merge($staging_style_blocks, $stage_style);
-			if ($stage_version)
-				$merged_style_blocks = self::merge_style_blocks($merged_style_blocks, $staging_style_blocks);
-			else
-				$merged_style_blocks = self::merge_style_blocks($staging_style_blocks, $merged_style_blocks);
-		}
+		// $published_version = Staging::get_published_stage_version($post_id);
+		// if ($published_version && $stage_version !== $published_version) {
+		// 	$staging_style_blocks = array();
+		// 	$meta_key = Staging::get_staged_meta_name(KIRKI_GLOBAL_STYLE_BLOCK_META_KEY, $post_id, $stage_version);
+		// 	$stage_style = get_post_meta($post_id, $meta_key, true);
+		// 	if ($stage_style)
+		// 		$staging_style_blocks = array_merge($staging_style_blocks, $stage_style);
 
-		return $merged_style_blocks;
+		// 	$meta_key = $meta_key . '_random';
+		// 	$stage_style = get_post_meta($post_id, $meta_key, true);
+		// 	if ($stage_style)
+		// 		$staging_style_blocks = array_merge($staging_style_blocks, $stage_style);
+		// 	if ($stage_version)
+		// 		$merged_style_blocks = self::merge_style_blocks($merged_style_blocks, $staging_style_blocks);
+		// 	else
+		// 		$merged_style_blocks = self::merge_style_blocks($staging_style_blocks, $merged_style_blocks);
+		// }
+
+		// return $merged_style_blocks;
 	}
 
 	/**
@@ -394,9 +399,9 @@ class HelperFunctions
 
 	/**
 	 * @deprecated
-	 * @see Kirki\App\Managers\PageManager::fix_duplicate_class_name_from_random_sbs()
+	 * @see Kirki\App\Managers\PageManager::resolve_duplicate_current_style_block_names()
 	 */
-	private static function fix_duplicate_class_name_from_random_sbs( $random_style_blocks, $global_style_blocks )
+	private static function fix_duplicate_class_name_from_random_sbs($random_style_blocks, $global_style_blocks)
 	{
 		$global_class_names = [];
 		$random_class_names = [];
@@ -447,7 +452,7 @@ class HelperFunctions
 
 	/**
 	 * @deprecated
-	 * @see Kirki\App\Managers\PageManager::check_or_generate_new_class_names()
+	 * @see Kirki\App\Managers\PageManager::make_duplicate_classes_to_unique()
 	 */
 	private static function check_or_generate_new_class_names($class_match, $global_class_names, $random_class_names)
 	{
@@ -468,11 +473,11 @@ class HelperFunctions
 
 	/**
 	 * @deprecated
-	 * @see Kirki\App\Managers\PageManager::get_class_name_from_string()
+	 * @see Kirki\App\Managers\PageManager::normalize_style_block_name()
 	 */
 	public static function get_class_name_from_string($s)
 	{
-		$s = strtolower( str_replace( ' ', '-', $s ) );
+		$s = strtolower(str_replace(' ', '-', $s));
 		return $s;
 	}
 
@@ -498,8 +503,7 @@ class HelperFunctions
 	 * @param int    $post_id post id.
 	 * @param object $style_blocks styleblocks.
 	 * 
-	 * @deprecated
-	 * @see Kirki\App\Managers\PageManager::update_page_styleblocks()
+	 * @deprecated the method is not used anymore. handle separately in GlobalDataManager and PageManager
 	 */
 	public static function update_page_styleblocks($post_id, $style_blocks)
 	{
@@ -524,7 +528,7 @@ class HelperFunctions
 	 * @param array $style //take styleblocs if isDefault and isGlobal key is true.
 	 * @return void
 	 * @deprecated
-	 * @see Kirki\App\Managers\GlobalDataManager::update_global_style_blocks()
+	 * @see Kirki\App\Managers\GlobalDataManager::update_deprecated_global_style_blocks()
 	 */
 	public static function save_global_style_blocks($style)
 	{
@@ -548,7 +552,7 @@ class HelperFunctions
 	 * @param array $style //take styleblocs if not isDefault and isGlobal key is true.
 	 * @return void
 	 * @deprecated
-	 * @see Kirki\App\Managers\PageManager::save_random_global_style_blocks()
+	 * @see Kirki\App\Managers\PageManager::save_style_blocks()
 	 */
 	public static function save_random_style_blocks($post_id, $style)
 	{
@@ -568,8 +572,8 @@ class HelperFunctions
 	 * @param array  $styles    Styles array to save.
 	 * 
 	 * @deprecated
-	 * @see \Kirki\App\Managers\PageManager::save_global_style_blocks()
-	 * @see \Kirki\App\Managers\PageManager::save_random_global_style_blocks()
+	 * @see \Kirki\App\Managers\PageManager::save_deprecated_global_style_blocks()
+	 * @see \Kirki\App\Managers\PageManager::save_style_blocks()
 	 */
 	public static function save_staged_style_blocks($post_id, $meta_key, $styles)
 	{
@@ -608,6 +612,8 @@ class HelperFunctions
 	 *
 	 * @param int $post_id post id.
 	 * @return bool true if kirki.
+	 * @deprecated 
+	 * @see Kirki\App\Managers\PageManager::is_kirki_editor_mode()
 	 */
 	public static function is_editor_mode_is_kirki($post_id)
 	{
@@ -1329,8 +1335,8 @@ class HelperFunctions
 		$prefix = $params['prefix'] ?? false;
 		$get_all_style_forcefully_if_get_style_true = $params['get_all_style_forcefully_if_get_style_true'] ?? false;
 
-		if($blocks){
-			$options['search_related_collection_ids'] = isset($params['search_related_collection_ids']) ? $params['search_related_collection_ids'] : self::collect_search_related_collection_ids( $blocks );
+		if ($blocks) {
+			$options['search_related_collection_ids'] = isset($params['search_related_collection_ids']) ? $params['search_related_collection_ids'] : self::collect_search_related_collection_ids($blocks);
 		}
 
 		//set initial context data start
@@ -1357,7 +1363,7 @@ class HelperFunctions
 			$s .= $preview->getCustomFontsLinks();
 		}
 
-		if($get_style){
+		if ($get_style) {
 			//style will be false when it calls from collection single item. only first item will generate style. others item will be same.
 			$s .= $preview->getStyleTag($only_used_style_blocks);
 		}
@@ -1371,18 +1377,19 @@ class HelperFunctions
 		return $s;
 	}
 
-	private static function collect_search_related_collection_ids( $data ) {
+	private static function collect_search_related_collection_ids($data)
+	{
 		$result = array();
-    foreach ($data as $item) {
-        if (
-            isset($item['properties']['dynamicContent']['related']) &&
-            $item['properties']['dynamicContent']['related'] === true &&
-            !empty($item['properties']['dynamicContent']['relatedCollection'])
-        ) {
+		foreach ($data as $item) {
+			if (
+				isset($item['properties']['dynamicContent']['related']) &&
+				$item['properties']['dynamicContent']['related'] === true &&
+				!empty($item['properties']['dynamicContent']['relatedCollection'])
+			) {
 				$result[$item['properties']['dynamicContent']['relatedCollection']] = true;
 			}
-    }
-    return $result;
+		}
+		return $result;
 	}
 
 	public static function get_custom_fonts_tags()
@@ -1803,7 +1810,7 @@ class HelperFunctions
 		$sorted_array = array();
 
 		if (is_array($filter_items)) {
-			array_walk($filter_items, function($item) use (&$sorted_array) {
+			array_walk($filter_items, function ($item) use (&$sorted_array) {
 				$relation_raw = isset($item['relation']) ? $item['relation'] : 'OR';
 				$relation = in_array(strtoupper($relation_raw), ['AND', 'OR'], true) ? strtoupper($relation_raw) : 'OR';
 
@@ -2126,38 +2133,41 @@ class HelperFunctions
 		return $new_filters;
 	}
 
-	 	/**
+	/**
 	 * Static callback for posts_where filter to allow removal with remove_filter.
 	 *
 	 * @param string $where The WHERE clause.
 	 * @return string Modified WHERE clause.
 	 */
-	public static function posts_where_filter_callback($where) {
+	public static function posts_where_filter_callback($where)
+	{
 		global $wpdb;
-		
+
 		$params = self::$posts_where_filter_params;
 		if (empty($params)) {
 			return $where;
 		}
-	
+
 		$query = $params['query'];
 		$reference_where_sql = $params['reference_where_sql'];
 		$post_parent = $params['post_parent'];
-	
+
 		$search = esc_sql($wpdb->esc_like($query));
-	
+
 		$where .= $wpdb->prepare(
 			" OR (
 				({$wpdb->posts}.post_title LIKE %s OR {$wpdb->posts}.post_content LIKE %s)
 				AND {$wpdb->posts}.post_parent = %d
 			)",
-			"%{$search}%", "%{$search}%", $post_parent
+			"%{$search}%",
+			"%{$search}%",
+			$post_parent
 		);
-	
+
 		if (!empty($reference_where_sql)) {
 			$where .= " {$reference_where_sql}";
 		}
-	
+
 		return $where;
 	}
 
@@ -2198,27 +2208,41 @@ class HelperFunctions
 			'paged' => $current_page,
 			'offset' => $offset,
 			'post_type' => $name,
-			'suppress_filters' => false,
+			'suppress_filters' => true,
 			'post_status' => $post_status,
 			's' => $query,
 		);
 
 		if (!empty($query)) {
 			self::search_posts_by_query($name, $query, $post_parent, $args);
-		} else{
+		} else {
 			remove_filter('posts_where', [HelperFunctions::class, 'posts_where_filter_callback']);
-		}
-
-		if (count($IDs) > 0) {
-			$args['post__in'] = $IDs;
-			unset($args['post_parent']);
-			$args['post_type'] = 'any';
-			$inherit = false;
-			$post_parent = false;
 		}
 
 		$filters = self::handle_legacy_filter_to_new_filter($filters);
 		$added_filters = array();
+
+		/**
+		 * Combine search and filters with AND logic
+		 * 
+		 * When both search query and filters are present, we need to ensure they work together:
+		 * - Search creates meta_query with 'OR' relation (matches any custom field)
+		 * - Filters add additional conditions
+		 * - Final structure: AND(search_conditions, filter_conditions)
+		 * 
+		 * This makes filters compulsory when searching, narrowing results further.
+		 */
+		$search_meta_query = isset($args['meta_query']) ? $args['meta_query'] : null;
+		$has_search = !empty($query) && $search_meta_query !== null;
+		$has_filters = !empty($filters) && is_array($filters);
+
+		// Reset meta_query if both search and filters exist to rebuild with AND relation
+		if ($has_search && $has_filters) {
+			$args['meta_query'] = [
+				'relation' => 'AND',
+				$search_meta_query, // Search conditions (with OR relation internally)
+			];
+		}
 
 		if (isset($filters) && is_array($filters)) {
 			foreach ($filters as $filter_item) {
@@ -2241,6 +2265,7 @@ class HelperFunctions
 							if ($callback) {
 								$added_filters[] = $callback;
 							}
+							break;
 						}
 
 						case 'post_date':
@@ -2330,8 +2355,15 @@ class HelperFunctions
 					$key = ContentManagerHelper::get_child_post_meta_key_using_field_id($post_parent, $field_name);
 					$data_type = $filter_item['type'] ?? 'text';
 
-					if (isset($args['meta_query']) && !is_array($args['meta_query'])) {
+					if (!isset($args['meta_query'])) {
 						$args['meta_query'] = array();
+					} elseif (!is_array($args['meta_query'])) {
+						$args['meta_query'] = array();
+					}
+					
+					// Ensure meta_query has proper structure when combining search + filters
+					if ($has_search && !isset($args['meta_query']['relation'])) {
+						$args['meta_query']['relation'] = 'AND';
 					}
 
 					switch ($data_type) {
@@ -2417,6 +2449,14 @@ class HelperFunctions
 			}
 		}
 
+		if (count($IDs) > 0) {
+			$args['post__in'] = $IDs;
+			unset($args['post_parent']);
+			$args['post_type'] = 'any';
+			$inherit = false;
+			$post_parent = false;
+		}
+
 		if (count($tax_query) > 1) {
 			$args['tax_query'] = $tax_query;
 		}
@@ -2480,6 +2520,12 @@ class HelperFunctions
 			}
 		}
 
+		// Disable suppress_filters when post_table text filters (post_title, post_content, post_excerpt)
+		// are present, since they rely on posts_where hooks to modify the SQL query.
+		if (!empty($added_filters)) {
+			$args['suppress_filters'] = false;
+		}
+
 		// Run the WP_Query
 
 		$query = new WP_Query($args);
@@ -2500,7 +2546,7 @@ class HelperFunctions
 			$kirki_content_manager_post_type_fields = ContentManagerHelper::get_post_type_custom_field_keys($post_parent);
 		}
 
-		foreach ( $posts as $key => &$post ) {
+		foreach ($posts as $key => &$post) {
 			if (is_null($post)) {
 				unset($posts[$key]);
 				continue;
@@ -2614,8 +2660,8 @@ class HelperFunctions
 		if (count($meta_query_args) > 1) {
 			$args['meta_query'] = $meta_query_args;
 		}
-	
-			// Store filter parameters for the callback
+
+		// Store filter parameters for the callback
 		self::$posts_where_filter_params = [
 			'query' => $query,
 			'reference_where_sql' => $reference_where_sql,
@@ -2783,10 +2829,10 @@ class HelperFunctions
 			if (is_array($t)) {
 				$total_terms = count($t);
 			} else {
-				$total_terms = wp_count_terms( ['taxonomy' => $params['taxonomy']] );
+				$total_terms = wp_count_terms(['taxonomy' => $params['taxonomy']]);
 			}
 		} else {
-			$total_terms = wp_count_terms( ['taxonomy' => $params['taxonomy']] );
+			$total_terms = wp_count_terms(['taxonomy' => $params['taxonomy']]);
 		}
 
 		$total_pages = ($item_per_page > 0) ? ceil($total_terms / $item_per_page) : 1;
@@ -3113,8 +3159,8 @@ class HelperFunctions
 	/**
 	 * Check if the request is from the editor preview.
 	 * 
-	 * @deprecated Use Kirki\App\Supports\EditorPreview::is_valid_request
-	 * @see \Kirki\App\Supports\EditorPreview::is_valid_request()
+	 * @deprecated Use Kirki\App\Supports\EditorPreview::has_valid_token
+	 * @see \Kirki\App\Supports\EditorPreview::has_valid_token()
 	 * @return bool
 	 */
 	public static function is_api_call_from_editor_preview()
@@ -3122,7 +3168,7 @@ class HelperFunctions
 		// Check the Editor-Preview-Token header
 		$headers = self::getallheaders();
 		$editor_preview_token = isset($headers['Editor-Preview-Token']) ? $headers['Editor-Preview-Token'] : null;
-		if($editor_preview_token && HelperFunctions::is_post_editor_preview_token_valid( $editor_preview_token)){
+		if ($editor_preview_token && HelperFunctions::is_post_editor_preview_token_valid($editor_preview_token)) {
 			return true;
 		}
 		return false;
@@ -3151,7 +3197,7 @@ class HelperFunctions
 	 * Check if the Editor-Preview-Token header is valid
 	 * 
 	 * @deprecated Use Kirki\App\Supports\EditorPreview::has_valid_token
-	 * @see Kirki\App\Supports\EditorPreview
+	 * @see Kirki\App\Supports\EditorPreview::has_valid_token()
 	 * @return bool
 	 */
 	public static function is_post_editor_preview_token_valid($token)
@@ -3290,6 +3336,7 @@ class HelperFunctions
 		delete_post_meta($post_id, KIRKI_META_NAME_FOR_POST_EDITOR_MODE);
 		delete_post_meta($post_id, KIRKI_GLOBAL_STYLE_BLOCK_META_KEY);
 		delete_post_meta($post_id, KIRKI_GLOBAL_STYLE_BLOCK_META_KEY . '_random');
+		delete_post_meta($post_id, KIRKI_META_NAME_FOR_USED_FONT_LIST);
 	}
 	/**
 	 * Get the query string for the media type
@@ -3375,6 +3422,9 @@ class HelperFunctions
 	 * Get current WordPress session ID.
 	 * This method generates a unique session ID if none exists.
 	 *
+	 * @deprecated
+	 * @see \Kirki\App\Supports\Session::get_session_id()
+	 *
 	 * @return string Session ID.
 	 */
 	public static function get_session_id()
@@ -3402,6 +3452,9 @@ class HelperFunctions
 	/**
 	 * Get session data by key using WordPress transients.
 	 *
+	 * @deprecated
+	 * @see \Kirki\App\Supports\Session::get()
+	 *
 	 * @param string $key The key of the session data to retrieve.
 	 * @return mixed|null The session data if found, null otherwise.
 	 */
@@ -3422,6 +3475,9 @@ class HelperFunctions
 
 	/**
 	 * Add or update session data using WordPress transients.
+	 *
+	 * @deprecated
+	 * @see \Kirki\App\Supports\Session::put()
 	 *
 	 * @param string $key The key of the session data.
 	 * @param mixed $value The value of the session data.
@@ -3444,6 +3500,9 @@ class HelperFunctions
 
 	/**
 	 * Delete session data by key using WordPress transients.
+	 *
+	 * @deprecated
+	 * @see \Kirki\App\Supports\Session::forget()
 	 *
 	 * @param string $key The key of the session data to delete.
 	 * @return void
@@ -4199,7 +4258,6 @@ class HelperFunctions
 
 	public static function is_element_accessible($access)
 	{
-
 		switch ($access) {
 			case 'all':
 				return true; // Accessible to everyone
@@ -4208,22 +4266,26 @@ class HelperFunctions
 				return !is_user_logged_in();
 
 			case 'logged-in':
-				return is_user_logged_in(); // Accessible to logged-in users
+				return is_user_logged_in(); // Accessible to any logged-in user
 
 			case 'admin':
-				return current_user_can('administrator'); // Accessible to administrators
+				// Administrators and Super Admins
+				return current_user_can('manage_options');
 
 			case 'editor':
-				return current_user_can('editor'); // Accessible to editors
+				// Editors, Admins, and Super Admins can see this
+				return current_user_can('edit_pages');
 
 			case 'author':
-				return current_user_can('author'); // Accessible to authors
+				// Authors, Editors, Admins, etc.
+				return current_user_can('publish_posts');
 
 			case 'subscriber':
-				return current_user_can('subscriber'); // Accessible to subscribers
+				// Subscribers and EVERY logged-in user above them
+				return current_user_can('read');
 
 			default:
-				return false; // Default to not accessible if the value is unrecognized
+				return false; // Safely hide if the access rule is unrecognized
 		}
 	}
 
@@ -4625,7 +4687,8 @@ class HelperFunctions
 		}
 		return $path;
 	}
-	public static function normalize_variable_mode($mode){
+	public static function normalize_variable_mode($mode)
+	{
 		if (!$mode) {
 			return ['color' => 'inherit', 'size' => 'inherit', 'text-style' => 'inherit', 'font-family' => 'inherit'];
 		}

@@ -3,7 +3,7 @@ Contributors: themeum
 Tags: page builder, website builder, drag and drop, form builder, freeform canvas
 Requires at least: 5.9
 Tested up to: 7.0
-Stable tag: 6.0.14
+Stable tag: 6.2.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -191,17 +191,55 @@ Nothing. All existing Customizer controls are fully preserved. Your current setu
 
 == Changelog ==
 
+= 6.2.0 =
+* New: Introduced the Interaction Library.
+* New: Introduced predefined design presets for new dynamic template pages.
+* New: Added current state design support for Tabs and Slider elements.
+* Update: Redesigned Connect to Field and Connect to CMS.
+* Update: Improved the Add New Page experience.
+* Update: Added a sticky, scrollable Layers panel.
+* Update: Added contextual icons to the Layers panel for visibility conditions, interactions, and more.
+* Update: Improved WordPress post slug validation.
+* Update: Improved Symbols save and delete operations.
+* Update: Added an image alt text popover to the Image element.
+* Update: Refined the Typography Font Options popover.
+* Update: Added support for combining search queries with collection filters using AND conditions.
+* Fix: Changed canvas multi-select from Cmd + Click to Shift + Click.
+* Fix: Fixed the preview URL on the Collection Details page.
+* Fix: Resolved a deprecated warning in the form submission class.
+* Fix: Resolved legacy style block merging issues.
+* Fix: Fixed the page rename issue.
+* Fix: Fixed the SVG element class generation issue.
+
+= 6.1.1 =
+* Fix: Resolved php 7.4 compatibility issue.
+
+= 6.1.0 =
+* New: Introduced a centralized Class Manager.
+* New: Added Mix Blend Mode support to the Style Panel.
+* Fix: Fixed filter and backdrop-filter properties being removed when deleting styles.
+* Fix: Applied !important to the Liquid Glass backdrop filter for proper rendering.
+* Fix: Fixed video audio playback for hover and autoplay when the audio toggle is enabled.
+* Fix: Fixed an issue where color changes from the Selection Color Panel affected multiple elements.
+* Fix: Resolved a double-click issue with legacy Rich Text content.
+* Fix: Fixed cloned elements not syncing newly created style blocks with the server.
+* Fix: Improved API security by validating editor preview tokens.
+* Fix: Added validation for ZIP file uploads.
+* Fix: Fixed frontend REST API validation for password-protected posts.
+* Update: A curated set of Google Fonts now loads by default. A Google API key is needed to access the full library.
+* Update: Redesigned range sliders to numerical input fields, so values can be set by dragging.
+* Update: Updated the App Settings route middleware for preview tokens.
+* Update: Implemented paginated loading for Kirki editor comments.
+
 = 6.0.14 =
-* Fix: Fixed a CSRF vulnerability affecting admin AJAX POST requests.
-* Fix: Hardened redirect handling by sanitizing redirect URLs.
-* Fix: Improved file path validation to prevent unauthorized file access.
+* Fix: Fixed CSRF vulnerability in admin POST AJAX requests (kirki_wp_admin_post_apis).
+* Fix: Sanitized redirect URLs and replaced wp_redirect with wp_safe_redirect in TemplateRedirection utility pages.
+* Fix: Improved file path protection to prevent unauthorized access.
 * Fix: Fixed datetime handling in the comment resource after Carbon removal.
 * Fix: Fixed double-quote handling in font family variables.
 * Fix: Fixed text style tag application for non-text elements.
-* Update: Enhanced permission checks for AJAX endpoints.
-* Update: Enabled SSL certificate verification for ZIP downloads.
+* Update: Enhanced permission checks for AJAX endpoints and enabled SSL certificate verification for ZIP downloads.
 * Update: Improved collaboration performance by running collaboration tasks in a separate thread.
-
 
 = 6.0.13 =
 * New: Added support for dragging and dropping local media files directly into Grid cells.
@@ -209,7 +247,6 @@ Nothing. All existing Customizer controls are fully preserved. Your current setu
 * Fix: Implemented security improvements and resolved known security issues.
 * Fix: Resolved device-specific interaction preview issues in the canvas.
 * Fix: Added support for dynamic video fields from the Content Manager in the Video element.
-
 
 = 6.0.12 =
 * Update: Added real-time canvas controls when focusing on Padding, Margin, and Gap inputs.
