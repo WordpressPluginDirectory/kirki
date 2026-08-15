@@ -160,6 +160,8 @@ class Preview extends ExceptionalElements {
 	 */
 	private $interaction_preset_and_text_animation_tracker = array();
 
+	private $interaction_library_text_animation_tracker = array();
+
 	private $scroll_into_custom_interaction_tracker = '';
 
 	private $track_animation_for_elements_with_this_class = '';
@@ -206,9 +208,6 @@ class Preview extends ExceptionalElements {
 		'link-block',
 		'form',
 		'button',
-		'file-upload-inner',
-		'file-upload-threshold-text',
-		'file-upload',
 		'popup-body',
 		'navigation',
 		'navigation-item',
@@ -485,11 +484,17 @@ class Preview extends ExceptionalElements {
 
 	public function get_interaction_set_as_initial_css() {
 		$s = '';
-		if ( count( $this->interaction_preset_and_text_animation_tracker ) > 0 ) {
+		if ( count( $this->interaction_preset_and_text_animation_tracker ) > 0 || count( $this->interaction_library_text_animation_tracker ) > 0 ) {
 			$animation_css = '';
 			foreach ( $this->interaction_preset_and_text_animation_tracker as $ele_id => $bool ) {
 					$animation_css .= "[data-kirki='" . $ele_id . "'] { visibility: hidden; }";
 			}
+
+		foreach ( $this->interaction_library_text_animation_tracker as $ele_id => $devices ) {
+			$css_value     = "[data-kirki='" . $ele_id . "'] { visibility: hidden; }";
+			$media_queries = ! empty( $devices ) ? $this->setMediaQuery( $css_value, $devices ) : '';
+			$animation_css .= ! empty( $media_queries ) ? $media_queries : $css_value;
+		}
 
 			if ( $animation_css ) {
 					$s .= "<style data='kirki-element-animation-visibility'>";
@@ -855,6 +860,8 @@ class Preview extends ExceptionalElements {
 		$s = $style_tag ? "<style id='kirki-variables-" . $key . "'>".$selector."{" : $selector."{";
 		$view_ports     = UserData::get_view_port_list();
 
+		$text_style_css = "";
+
 		foreach ($variables['data'] as $key2 => $group) {
 			if($group['key'] !== $mode_type) {
 				continue;
@@ -883,13 +890,17 @@ class Preview extends ExceptionalElements {
 						$s .= "$name:" . $variable['value'][$mode] . ";";
 						break;
 					case 'text-style':
-						$s .= self::buildTextStyleCss( $variable, $mode, $view_ports );
+						$text_style_css .= self::buildTextStyleCss( $variable, $mode, $view_ports );
 						break;
 				}
 			}
 		}
 
-		$s .= $style_tag ? '}</style>' : '}';
+		if($selector && $selector !== ':root'){
+			$text_style_css = "$selector{$text_style_css}";
+		}
+
+		$s .= $style_tag ? "}$text_style_css</style>" : "}$text_style_css";
 
 		self::$printed_variable_tracker[ $k ] = true;
 		return $s;
@@ -1061,6 +1072,7 @@ class Preview extends ExceptionalElements {
 			$seo_open_graph_image = self::getSeoValue( $post_id, $seo_settings['openGraph']['openGraphImage']['value'] );
 
 			$meta_tags .= self::getMeta( 'og:image', $seo_open_graph_image );
+			$meta_tags .= self::getMeta( 'twitter:card', 'summary_large_image' );
 			$meta_tags .= self::getMeta( 'twitter:image', $seo_open_graph_image );
 		}
 
@@ -1271,7 +1283,7 @@ class Preview extends ExceptionalElements {
 				$this->interactions[ $id ] = $this->updateClassListForInteractionFromStyleBlockId( $properties['interactions'], $element );
 			}
 			if(isset($properties['interactionLibrary'])) {
-				$this->interaction_library[ $id ] = $properties['interactionLibrary'];
+				$this->interaction_library[ $id ] = $this->updateStylesForInteractionLibrary( $properties['interactionLibrary'], $element );
 			}
 			if ( isset( $properties['code'], $properties['code']['javascript'] ) ) {
 				$this->custom_codes .= str_replace( 'KIRKI_TARGET_ELEMENT_ID', $id, $properties['code']['javascript'] );
@@ -1346,19 +1358,13 @@ class Preview extends ExceptionalElements {
 				$element['name'] === 'textarea' ||
 				$element['name'] === 'select' ||
 				$element['name'] === 'checkbox-element' ||
-				$element['name'] === 'radio-group' ||
-				$element['name'] === 'file-upload'
+				$element['name'] === 'radio-group'
 			) {
 				$parent_form_id = $options['form']['id'] ?? '';
 				$session_data   = HelperFunctions::get_session_data( $parent_form_id );
 
 				$type              = $element['properties']['attributes']['type'] ?? '';
 				$others_attributes = array();
-
-				if ( 'file-upload' === $element['name'] ) {
-					$type                               = 'file';
-					$others_attributes['max-file-size'] = $element['properties']['maxFileSize'] ?? 2;
-				}
 
 				if ( $session_data && isset( $element['properties']['attributes']['name'] ) ) {
 					if ( ! isset( $session_data['fields'] ) ) {
@@ -1699,6 +1705,20 @@ class Preview extends ExceptionalElements {
 		return $interactionData;
 	}
 
+	private function updateStylesForInteractionLibrary( $interactionLibraryData, $element ) {
+		$id = $element['id'];
+		foreach ( $interactionLibraryData as $interactionLibrary ) {
+			if ( isset( $interactionLibrary['type'] ) && $interactionLibrary['type'] === 'textAnimation'  ) {
+				if( isset($interactionLibrary['trigger']) && $interactionLibrary['trigger'] === 'scrollIntoView' ) {
+						$devices = isset( $interactionLibrary['deviceAndClassList']['devices'] ) ? $interactionLibrary['deviceAndClassList']['devices'] : array();
+						$this->interaction_library_text_animation_tracker[ $id ] = $devices;
+						break;	
+				}
+			}
+		}
+		return $interactionLibraryData;
+	}
+
 	/**
 	 * Get element related config
 	 *
@@ -1880,6 +1900,7 @@ class Preview extends ExceptionalElements {
 				'generate_element'                   => array( $this, 'generateSingleElement' ),
 				'generate_child_element_with_new_id' => array( new HelperFunctions(), 'rec_update_data_id_then_return_new_html' ),
 				'get_data_and_styles_from_root'      => array( new DataHelper(), 'get_data_and_styles_from_root' ),
+				'get_collection_info'                => array( $this, 'get_collection_info' ),
 			)
 		);
 	}
@@ -1940,10 +1961,12 @@ class Preview extends ExceptionalElements {
 			if ( isset( $this_data['id'], $this->data[ $this_data['id'] ], $this->data[ $this_data['id'] ]['children'] ) ) {
 				$child_count = count( $this->data[ $this_data['id'] ]['children'] );
 				for ( $i = 0; $i < $child_count; $i++ ) {
+					// Position of the child inside its parent. Kept separate from `item_index`,
+					// which carries the collection item index down the whole item markup.
 					$merged_options    = array_merge(
 							$options,
 							array(
-								'item_index' => $i,
+								'child_index' => $i,
 							)
 						);
 					$html .= $this->recGenHTML( $this->data[ $this_data['id'] ]['children'][ $i ], $merged_options );
@@ -1990,10 +2013,21 @@ class Preview extends ExceptionalElements {
 
 		if ( $tag !== 'a' && $href ) {
 			$target = isset( $properties['attributes'], $properties['attributes']['target'] ) ? "target={$properties['attributes']['target']}" : '';
-			$rel    = isset( $properties['attributes'], $properties['attributes']['rel'] ) ? "rel={$properties['attributes']['rel']}" : '';
+			$rel = '';
+
+			// check if rel is array and convert to string
+			if (isset($properties['attributes'], $properties['attributes']['rel'])) {
+				$rel_value = $properties['attributes']['rel'];
+
+				if (is_array($rel_value)) {
+					$rel_value = implode(' ', $rel_value);
+				}
+
+				$rel = "rel='{$rel_value}'";
+			}
 
 			if ( isset( $properties['type'] ) ) {
-				$html = "<a href={$href} {$target} {$rel}>{$html}</a>";
+				$html = "<a href='{$href}' {$target} {$rel}>{$html}</a>";
 			}
 		}
 
@@ -2026,6 +2060,11 @@ class Preview extends ExceptionalElements {
 					}
 					$content = apply_filters( 'kirki_dynamic_content', false, $contentInfo );
 					if ( $content ) {
+						// Plain-text dynamic values (comment fields) are visitor supplied,
+						// so they are never trusted as a URL here.
+						if ( is_string( $content ) && in_array( $dynamic_content['type'] ?? '', Utils::get_plain_text_dynamic_content_types(), true ) ) {
+							return esc_url( html_entity_decode( $content, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+						}
 						return $content;
 					}
 

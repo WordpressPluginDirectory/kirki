@@ -3,7 +3,7 @@ Contributors: themeum
 Tags: page builder, website builder, drag and drop, form builder, freeform canvas
 Requires at least: 5.9
 Tested up to: 7.0
-Stable tag: 6.2.0
+Stable tag: 6.2.3
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -190,6 +190,36 @@ Nothing. All existing Customizer controls are fully preserved. Your current setu
 ---
 
 == Changelog ==
+
+= 6.2.3 =
+* New: Copy-and-paste interactions now also support the interaction library.
+* Update: Updated the default styles for headings, buttons, images, and tabs.
+* Fix: Fixed an issue with font family OpenType feature data parsing.
+* Fix: Prevented font upload issues when changing file extensions.
+* Fix: Reset typography-related CSS when applying a text style.
+* Fix: Removed ZIP file upload functionality from custom font uploads.
+
+= 6.2.2 =
+* New: Added Element Multiselect for selecting and editing multiple elements at once.
+* New: Added vertical resizing for the custom interaction timeline editor.
+* Update: Advanced typography panel functionality updated for open type feature text.
+* Update: Text animations now play only when the element enters the viewport.
+* Update: Improved the Layer Panel and Canvas drag preview opacity for better visibility.
+* Update: Removed the File element from the Form Builder.
+* Fix: Resolved specificity issues in text style and variable CSS generation.
+* Fix: Fixed custom animation timeline previews so transform animations replay chronologically instead of collapsing by property.
+
+= 6.2.1 =
+* New: Added a Flex Child option to the Sizing panel for finer control over flex layouts.
+* Update: Automatically removes matching styles from an element when a text style is applied.
+* Update: Improved rich text selection handling with better root selection context management.
+* Update: Enhanced external text paste behavior, preserving formatting and eliminating trailing whitespace issues.
+* Update: Enhanced the Color Picker to support mixed color values.
+* Update: Videos now automatically pause when they move out of the viewport.
+* Update: Improved CSS generation for text styles and variables to ensure better specificity.
+* Fix: Addressed multiple security vulnerabilities, including XSS, arbitrary shortcode execution, path traversal, SSRF, and email relay issues.
+* Fix: Resolved text overflow and ellipsis issues in Input Number, Tabs, and Select controls.
+* Fix: Resolved dropdown target visibility issues when controlled by dropdown state settings.
 
 = 6.2.0 =
 * New: Introduced the Interaction Library.

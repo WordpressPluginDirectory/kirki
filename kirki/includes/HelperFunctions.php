@@ -1034,7 +1034,8 @@ class HelperFunctions
 
 					// For now, only string is supported!
 					if (is_string($meta)) {
-						$content = $meta;
+						// Post meta is arbitrary, low-privilege-authored data: always escape.
+						$content = self::escape_post_meta_value($meta);
 					}
 				}
 
@@ -1374,7 +1375,51 @@ class HelperFunctions
 
 		$s .= $html;
 		$s .= $preview->getScriptTag($should_take_app_script);
+
+		$s = self::decode_entities_without_creating_markup($s);
 		return $s;
+	}
+
+	/**
+	 * Decode HTML entities in already-rendered page markup without ever turning
+	 * escaped text back into live tags.
+	 *
+	 * The rendered document mixes trusted markup (elements the builder emitted,
+	 * including admin authored custom code) with escaped text nodes. A blanket
+	 * html_entity_decode() over that mix undoes the escaping applied while
+	 * rendering, so `&lt;script&gt;` stored in any text value — a visitor's
+	 * comment, for instance — becomes an executable `<script>` tag.
+	 *
+	 * Angle-bracket entities are therefore held back while everything else is
+	 * decoded as before, then restored verbatim. Entities such as `&amp;`,
+	 * `&nbsp;` and named HTML5 entities keep decoding exactly as they used to;
+	 * markup emitted by the renderer is unaffected because it contains literal
+	 * `<`/`>`, not entities.
+	 *
+	 * @param string $content Rendered page markup.
+	 * @return string
+	 */
+	private static function decode_entities_without_creating_markup( $content ) {
+		if ( ! is_string( $content ) || '' === $content ) {
+			return $content;
+		}
+
+		$held = array();
+
+		// `&lt;` `&gt;` and their numeric/hex forms, in any zero-padded spelling.
+		$content = preg_replace_callback(
+			'/&(?:lt|gt|#0*(?:60|62)|#[xX]0*3[ceCE]);/',
+			function ( $matches ) use ( &$held ) {
+				$key          = "\x02kirki-entity-" . count( $held ) . "\x03";
+				$held[ $key ] = $matches[0];
+				return $key;
+			},
+			$content
+		);
+
+		$content = html_entity_decode( $content, ENT_NOQUOTES | ENT_HTML5, 'UTF-8' );
+
+		return strtr( $content, $held );
 	}
 
 	private static function collect_search_related_collection_ids($data)
@@ -2171,6 +2216,105 @@ class HelperFunctions
 		return $where;
 	}
 
+	public static function get_kirki_cms_inherit_post_filters( $filters, $related_post_parent, $post_parent ) {
+		global $wpdb;
+
+		if ( empty( $related_post_parent ) ) {
+			return $filters;
+		}
+
+		$related_post_parent = (int) $related_post_parent;
+
+		$related_post_parent_obj = get_post($related_post_parent);
+		if($related_post_parent_obj && str_contains( $related_post_parent_obj->post_type, 'kirki_cm_' )){
+			$related_fields = ContentManagerHelper::get_post_type_custom_field_keys( $post_parent );
+
+			if ( empty( $related_fields ) || ! is_array( $related_fields ) ) {
+				return $filters;
+			}
+
+			if ( ! is_array( $filters ) ) {
+				$filters = [];
+			}
+
+			foreach ( $related_fields as $field ) {
+				if ( ! isset( $field['type'] ) || ! in_array( $field['type'], [ 'multi-reference', 'reference' ], true ) ) {
+					continue;
+				}
+
+				$field_id = $field['id'] ?? null;
+				if ( ! $field_id ) {
+					continue;
+				}
+
+				$meta_key = ContentManagerHelper::get_child_post_meta_key_using_field_id( $post_parent, $field_id );
+
+				$has_references = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(*) FROM {$wpdb->prefix}kirki_cm_reference WHERE field_meta_key = %s AND ref_post_id = %d",
+						$meta_key,
+						$related_post_parent
+					)
+				);
+
+				if ( empty( $has_references ) ) {
+					continue;
+				}
+
+				$filter_exists = false;
+				$filter_index  = null;
+
+				foreach ( $filters as $index => $existing_filter ) {
+					if ( isset( $existing_filter['id'] ) && $existing_filter['id'] === $field_id ) {
+						$filter_exists = true;
+						$filter_index  = $index;
+						break;
+					}
+				}
+
+				if ( ! $filter_exists ) {
+					$filters[] = [
+						'type'  => $field['type'],
+						'id'    => $field_id,
+						'title' => $field['label'] ?? $field_id,
+						'items' => [],
+					];
+					$filter_index = count( $filters ) - 1;
+				}
+
+				if ( ! isset( $filters[ $filter_index ]['items'] ) || ! is_array( $filters[ $filter_index ]['items'] ) ) {
+					$filters[ $filter_index ]['items'] = [];
+				}
+
+				$new_item = [
+					'condition' => 'in',
+					'value'     => $related_post_parent,
+					'relation'  => 'OR',
+				];
+
+				$item_exists = false;
+				foreach ( $filters[ $filter_index ]['items'] as $item ) {
+					if (
+						isset( $item['condition'], $item['value'], $item['relation'] ) &&
+						$item['condition'] === $new_item['condition'] &&
+						(int) $item['value'] === $new_item['value'] &&
+						$item['relation'] === $new_item['relation']
+					) {
+						$item_exists = true;
+						break;
+					}
+				}
+
+				if ( ! $item_exists ) {
+					$filters[ $filter_index ]['items'][] = $new_item;
+				}
+			}
+		}
+
+		
+		return $filters;
+	}
+
 	/**
 	 * Get dynamic collection data
 	 *
@@ -2220,6 +2364,9 @@ class HelperFunctions
 		}
 
 		$filters = self::handle_legacy_filter_to_new_filter($filters);
+		if($inherit && $related_post_parent && str_contains( $name, 'kirki_cm_' )){
+			$filters = self::get_kirki_cms_inherit_post_filters($filters, $related_post_parent, $post_parent);
+		}
 		$added_filters = array();
 
 		/**
@@ -2461,23 +2608,34 @@ class HelperFunctions
 			$args['tax_query'] = $tax_query;
 		}
 
-		if (isset($sorting)) {
-			// Set the sort order (ASC/DESC)
-			if (isset($sorting['order'])) {
-				$args['order'] = $sorting['order'];
+		// Set default orderby and order if not explicitly specified
+		$order = 'DESC';
+		$orderby = 'date';
+
+		if (isset($sorting) && is_array($sorting) && !empty($sorting)) {
+			if (!empty($sorting['order'])) {
+				$order = $sorting['order'];
+			} elseif (!empty($sorting['type'])) {
+				$order = $sorting['type'];
 			}
 
-			// Check if the name is set and contains 'kirki_cm' && not include 'kirki_cm_post_meta'
-			if (isset($name) && str_contains($name, KIRKI_CONTENT_MANAGER_PREFIX) && !in_array($sorting['orderby'], KIRKI_WORDPRESS_SORT_BY_OPTIONS)) {
+			if (!empty($sorting['orderby'])) {
+				$orderby = $sorting['orderby'];
+			} elseif (!empty($sorting['value'])) {
+				$orderby = $sorting['value'];
+			}
+		}
+
+		$args['order'] = $order;
+
+		if ('none' !== $orderby) {
+			if (isset($name) && str_contains($name, KIRKI_CONTENT_MANAGER_PREFIX) && !in_array($orderby, KIRKI_WORDPRESS_SORT_BY_OPTIONS, true)) {
 				$args['orderby'] = 'meta_value'; // Use 'meta_value' or 'meta_value_num' as needed
-				if (isset($sorting['orderby']) && !empty($sorting['orderby'])) {
-					$args['meta_key'] = ContentManagerHelper::get_child_post_meta_key_using_field_id($post_parent, $sorting['orderby']);
-				}
+				$args['meta_key'] = ContentManagerHelper::get_child_post_meta_key_using_field_id($post_parent, $orderby);
+			} elseif ('date' === $orderby) {
+				$args['orderby'] = array('date' => $order, 'ID' => $order);
 			} else {
-				// For other cases, set the orderby based on the sorting parameter
-				if (isset($sorting['orderby']) && !empty($sorting['orderby'])) {
-					$args['orderby'] = $sorting['orderby'];
-				}
+				$args['orderby'] = $orderby;
 			}
 		}
 
@@ -2486,7 +2644,7 @@ class HelperFunctions
 			$args['post_parent'] = $post_parent;
 		}
 
-		if (!empty($context) && $inherit) {
+		if (!empty($context) && $inherit && isset( $args['post_type']) && !str_contains( $args['post_type'], 'kirki_cm') ) {
 			if ($context['collectionType'] == 'user') {
 				$args['author'] = $context['id'];
 				unset($args['post_parent']);
@@ -2527,7 +2685,6 @@ class HelperFunctions
 		}
 
 		// Run the WP_Query
-
 		$query = new WP_Query($args);
 		foreach ($added_filters as $callback) {
 			remove_filter('posts_where', $callback);
@@ -3527,6 +3684,26 @@ class HelperFunctions
 		}
 	}
 
+	/**
+	 * Escape a post meta value for safe output.
+	 *
+	 * The front-end content pipeline (TheFrontend::replace_content) applies a
+	 * single html_entity_decode() pass after core has processed shortcodes,
+	 * which would undo a plain esc_html(). Re-encoding the ampersands (with
+	 * double_encode enabled) yields a single-escaped value in the final output
+	 * while still neutralizing markup authored by low-privileged users.
+	 *
+	 * @param mixed $value The raw post meta value.
+	 * @return string Escaped value.
+	 */
+	public static function escape_post_meta_value($value)
+	{
+		if (!is_scalar($value)) {
+			return '';
+		}
+
+		return htmlspecialchars(esc_html((string) $value), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', true);
+	}
 
 	/**
 	 * Is Pro user checking function.
@@ -4700,5 +4877,39 @@ class HelperFunctions
 			return $mode;
 		}
 		return $mode;
+	}
+
+	/**
+	 * Whether the target url is a safe, externally reachable http(s) URL.
+	 *
+	 * Rejects loopback, private, link-local and cloud-metadata addresses so a
+	 * planted form config cannot be used to probe the server's own network.
+	 *
+	 * @param string $url The URL.
+	 * @return bool
+	 */
+	public static function is_safe_url($url) {
+		$scheme = wp_parse_url($url, PHP_URL_SCHEME);
+		$host = wp_parse_url($url, PHP_URL_HOST);
+
+		if (!is_string($scheme) || !in_array(strtolower($scheme), array('http', 'https'), true)) {
+			return false;
+		}
+
+		if (!is_string($host) || '' === $host) {
+			return false;
+		}
+
+		if (filter_var($host, FILTER_VALIDATE_IP)) {
+			return (bool) filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+		}
+
+		$ip = gethostbyname($host);
+
+		if (!filter_var($ip, FILTER_VALIDATE_IP) || $ip === $host) {
+			return false;
+		}
+
+		return (bool) filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 	}
 }

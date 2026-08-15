@@ -12,9 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use Kirki\Ajax\Symbol;
-use Kirki\Ajax\Users;
 use Kirki\HelperFunctions;
-use Kirki\Ajax\WordpressData;
 
 /**
  * ExceptionalElements Class
@@ -72,18 +70,6 @@ class ExceptionalElements {
 			case 'link-block': {
 					return $this->link_block_element( $this_data, $attributes, $options );
 			}
-
-			case 'file-upload-inner': {
-					return $this->file_input_element( $this_data, $attributes, $options );
-			}
-
-			case 'file-upload-threshold-text': {
-					return $this->file_upload_threshold_text( $this_data, $attributes, $options );
-			}
-
-			case 'file-upload': {
-					return $this->file_upload_element( $this_data, $attributes, $options );
-			}
 			case 'slider':
 			case 'collection': {
 				$element_name = $this_data['name'];
@@ -116,7 +102,7 @@ class ExceptionalElements {
 
 				$children = $this->construct_items_collection_markup( $dynamic_content, $this_data, $options );
 
-				return $this->construct_collection_markup( $children, $this_data, $attributes, $element_name );
+				return $this->construct_collection_markup( $children, $this_data, $attributes, $element_name, $options );
 			}
 			case 'loading': {
 				return $this->collection_loading_element( $this_data, $attributes, $options );
@@ -530,8 +516,9 @@ class ExceptionalElements {
 		$post_id    = HelperFunctions::get_post_id_if_possible_from_url();
 		$form_id    = $this_data['id'];
 		$post_data  = $form_id . '|' . $post_id;
+		$form_data  = $post_data . '|' . wp_hash( $post_data );
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-		$form_id_base64 = base64_encode( base64_encode( $post_data ) );
+		$form_id_base64 = base64_encode( base64_encode( $form_data ) );
 
 		$form_nonce_field = wp_nonce_field( 'wp_rest', '_wpnonce', true, false );
 
@@ -770,21 +757,16 @@ class ExceptionalElements {
 	 * @param array $attributes single element all attributes.
 	 * @return string HTML markup.
 	 */
-	private function construct_collection_markup( $children, $this_data, $attributes, $element_name = 'collection' ) {
+	private function construct_collection_markup( $children, $this_data, $attributes, $element_name = 'collection', $options=[] ) {
 		$tag = isset( $this_data['properties']['tag'] ) ? $this_data['properties']['tag'] : 'div';
 
-		$data_n_styles = array(
-			'blocks' => array(),
-			'styles' => array(),
-		);
-
-		DataHelper::get_data_and_styles_from_root( $this_data['id'], $data_n_styles, $this->data, $this->style_blocks );
+		$collection_info = $this->get_collection_info($options, $this_data);
 
 		if ( is_array( $children ) ) {
 			return $this->get_template(
 				'collection',
 				array(
-					'data'       => $data_n_styles,
+					'data'       => $collection_info,
 					'attributes' => $attributes,
 					'children'   => $children,
 					'tag'        => $tag,
@@ -793,6 +775,20 @@ class ExceptionalElements {
 		} else {
 			return '';
 		}
+	}
+
+	public function get_collection_info($options, $this_data) {
+		$collection_info = array(
+			'post_id' => isset($options['post']) ? $options['post']->ID : false,
+			'collection_data_id' => isset($this_data['original_id']) ? $this_data['original_id'] :$this_data['id']
+		);
+		if(isset($options['kirki_template_id']) && $options['kirki_template_id']) {
+			$collection_info['post_id'] = $options['kirki_template_id'];
+		}
+		if(isset($options['inside_symbol']) && $options['inside_symbol'] === true){
+			$collection_info['post_id'] = $options['symbol_id'];
+		}
+		return $collection_info;
 	}
 
 	/**
@@ -1248,6 +1244,9 @@ class ExceptionalElements {
 		if ( ! $symbol_data || ! isset( $symbol_data['data'] ) ) {
 			return '';
 		}
+		$options['symbol_id'] = $symbol_id;
+		$options['inside_symbol'] = true;
+
 		$s           = HelperFunctions::rec_update_data_id_then_return_new_html( $symbol_data['data'], $symbol_data['styleBlocks'], $symbol_data['root'], $options );
 		$fonts_links = '';
 		if ( isset( $symbol_data['customFonts'] ) ) {
@@ -1273,97 +1272,6 @@ class ExceptionalElements {
 		$message = ob_get_contents();
 		ob_end_clean();
 		return $message;
-	}
-
-	/**
-	 * Generate File upload element markup
-	 *
-	 * @param array $this_data single element block.
-	 * @param array $attributes single element all attributes.
-	 * @param array $options single element all options.
-	 * @return string HTML markup.
-	 */
-	private function file_upload_element( $this_data, $attributes, $options ) {
-		$tag       = isset( $this_data['properties']['tag'] ) ? $this_data['properties']['tag'] : 'div';
-		$data_attr = isset( $this_data['properties']['attributes'] ) ? $this_data['properties']['attributes'] : array();
-		$options   = array_merge(
-			$options,
-			array(
-				'file_upload' => array(
-					'name'        => isset( $data_attr['name'] ) ? $data_attr['name'] : '',
-					'accept'      => isset( $data_attr['accept'] ) ? $data_attr['accept'] : '',
-					'required'    => isset( $data_attr['required'] ) ? $data_attr['required'] : '',
-					'maxFileSize' => isset( $this_data['properties']['maxFileSize'] ) ? $this_data['properties']['maxFileSize'] : 2,
-				),
-			)
-		);
-
-		$attributes = $this->getAllAttributes(
-			$this_data,
-			array(
-				'name'     => false,
-				'accept'   => false,
-				'required' => false,
-				'rest'     => true,
-			),
-		);
-
-		$children_markup = $this->construct_children_markup( isset( $this_data['children'] ) ? $this_data['children'] : array(), $options );
-		return "<$tag $attributes>
-						$children_markup
-					</$tag>";
-	}
-
-	/**
-	 * Generate File input threshold text element markup
-	 *
-	 * @param array $this_data single element block.
-	 * @param array $attributes single element all attributes.
-	 * @param array $options single element all options.
-	 * @return string HTML markup.
-	 */
-
-	private function file_upload_threshold_text( $this_data, $attributes, $options ) {
-		$tag           = isset( $this_data['properties']['tag'] ) ? $this_data['properties']['tag'] : 'span';
-		$max_file_size = isset( $options['file_upload']['maxFileSize'] ) ? $options['file_upload']['maxFileSize'] : 2;
-
-		return "<$tag $attributes>Max file size " . $max_file_size . "MB.</$tag>";
-	}
-
-	/**
-	 * Generate File input element markup
-	 *
-	 * @param array $this_data single element block.
-	 * @param array $attributes single element all attributes.
-	 * @param array $options single element all options.
-	 * @return string HTML markup.
-	 */
-	private function file_input_element( $this_data, $attributes, $options ) {
-		$tag      = isset( $this_data['properties']['tag'] ) ? $this_data['properties']['tag'] : 'div';
-		$children = $this_data['children'] ?? array();
-		$markup   = '';
-
-		$name          = isset( $options['file_upload']['name'] ) ? $options['file_upload']['name'] : '';
-		$accept        = isset( $options['file_upload']['accept'] ) ? $options['file_upload']['accept'] : '';
-		$required      = isset( $options['file_upload']['required'] ) ? $options['file_upload']['required'] : '';
-		$max_file_size = isset( $options['file_upload']['maxFileSize'] ) ? $options['file_upload']['maxFileSize'] : 2;
-
-		foreach ( $children as $child ) {
-			$markup .= $this->recGenHTML( $child, $options );
-		}
-
-		return "<$tag $attributes>
-						$markup
-						<input
-							type=\"file\"
-							readonly
-							style=\"display: none;\"
-							name=\"$name\"
-							accept=\"$accept\"
-							required=\"$required\"
-							kirki-max_file_size=$max_file_size
-							/>
-						</$tag>";
 	}
 
 	private function slider_nav_element( $this_data, $attributes, $options ) {
@@ -1448,9 +1356,9 @@ class ExceptionalElements {
 		$markup   = '';
 
 		$active_tab_index = isset( $options['active_tab_index'] ) ? $options['active_tab_index'] : 0;
-		$item_index       = isset( $options['item_index'] ) ? $options['item_index'] : 0;
+		$child_index      = isset( $options['child_index'] ) ? $options['child_index'] : 0;
 
-		if ( $active_tab_index === $item_index ) {
+		if ( $active_tab_index === $child_index ) {
 			// Add kirki-current-tab class to attributes
 			if ( preg_match( '/class="([^"]*)"/', $attributes, $matches ) ) {
 				// Class attribute exists, append to it
@@ -1482,9 +1390,9 @@ class ExceptionalElements {
 		$markup   = '';
 
 		$active_tab_index = isset( $options['active_tab_index'] ) ? $options['active_tab_index'] : 0;
-		$item_index       = isset( $options['item_index'] ) ? $options['item_index'] : 0;
+		$child_index      = isset( $options['child_index'] ) ? $options['child_index'] : 0;
 
-		if ( $active_tab_index === $item_index ) {
+		if ( $active_tab_index === $child_index ) {
 			// Add kirki-tab-active class to attributes
 			if ( preg_match( '/class="([^"]*)"/', $attributes, $matches ) ) {
 				// Class attribute exists, append to it
