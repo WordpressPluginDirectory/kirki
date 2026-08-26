@@ -2,8 +2,8 @@
 Contributors: themeum
 Tags: page builder, website builder, drag and drop, form builder, freeform canvas
 Requires at least: 5.9
-Tested up to: 7.0
-Stable tag: 6.2.3
+Tested up to: 7.1
+Stable tag: 6.2.5
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -190,6 +190,22 @@ Nothing. All existing Customizer controls are fully preserved. Your current setu
 ---
 
 == Changelog ==
+
+= 6.2.5 =
+* Update: Redesigned the Island toolbar with updated icons, layout, and functionality.
+* Update: Moved the editor's dark/light mode controls to the Island.
+* Update: Updated SVG element settings.
+* Update: Improved responsive device resizing based on minimum and maximum device width ranges.
+* Update: Updated Form reCAPTCHA element settings and functionality.
+* Update: Refreshed the empty placeholder design for Image, Video, Lottie, and Lightbox elements.
+* Fix: Resolved an issue causing DynamicTextBox to glitch when focused.
+
+= 6.2.4 =
+* Update: Verify font files before parsing OpenType features.
+* Update: Show the text clamp value when a font-size clamp is configured.
+* Fix: Resolve an issue with the Dashboard page list API when deleting a page.
+* Fix: Address security vulnerabilities related to XSS through attacker-injected object keys.
+* Fix: Fully disable unauthorized POST API calls.
 
 = 6.2.3 =
 * New: Copy-and-paste interactions now also support the interaction library.
