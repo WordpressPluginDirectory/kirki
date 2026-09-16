@@ -10,4 +10,6 @@ class ActionTypes
 
     const DELETE = 'delete';
     const DUPLICATE = 'duplicate';
+    const DRAFT = 'draft';
+    const PUBLISH = 'publish';
 }

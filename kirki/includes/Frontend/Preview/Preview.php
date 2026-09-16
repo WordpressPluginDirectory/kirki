@@ -38,6 +38,16 @@ class Preview extends ExceptionalElements {
 	 */
 	protected $symbol_id = null;
 	protected $prefix    = false;
+
+	/**
+	 * Whether component binding metadata should be included in preview markup.
+	 *
+	 * This is enabled for builder symbol previews only. Public frontend markup
+	 * continues to render without the editor-only metadata.
+	 *
+	 * @var bool
+	 */
+	protected $include_component_field_metadata = false;
 	/**
 	 * $style_blocks for all style blocks merged array. like=> global, migrated, symbols. etc.
 	 */
@@ -274,6 +284,7 @@ class Preview extends ExceptionalElements {
 	 * @return string
 	 */
 	public function getHTML( $options = array() ) {
+		$this->include_component_field_metadata = ! empty( $options['include_component_field_metadata'] );
 		// TODO: need to fix this code
 		// if(!isset($options['user']) && get_current_user_id() > 0){
 		// $options['user'] = Users::get_user_by_id(get_current_user_id());
@@ -712,31 +723,6 @@ class Preview extends ExceptionalElements {
 	}
 
 	/**
-	 * Get the custom fonts links
-	 *
-	 * @return string
-	 */
-	public function getCustomFontsLinks() {
-		$post_id = $this->symbol_id ? $this->symbol_id : HelperFunctions::get_post_id_if_possible_from_url();
-		$post    = get_post( $post_id );
-
-		if ( ! $post ) {
-			return '';
-		}
-
-		$s = '';
-		if ( 'kirki_symbol' === $post->post_type ) {
-			$symbol = Symbol::get_single_symbol( $post_id, true );
-			if ( isset( $symbol['symbolData'], $symbol['symbolData']['customFonts'] ) ) {
-				foreach ( $symbol['symbolData']['customFonts'] as $key => $f ) {
-					$s .= HelperFunctions::getFontsHTMLMarkup( $f );
-				}
-			}
-		}
-		return $s;
-	}
-
-	/**
 	 * Get the script tag string
 	 *
 	 * @return string
@@ -923,11 +909,15 @@ class Preview extends ExceptionalElements {
 	 */
 	private static function buildTextStyleCss( $variable, $mode, $view_ports ) {
 		$css         = '';
-		$mode_data   = $variable['value'][ $mode ];
+		$mode_data   = isset( $variable['value'][ $mode ] ) ? $variable['value'][ $mode ] : ( isset( $variable['value']['default'] ) ? $variable['value']['default'] : array() );
+		if ( empty( $mode_data ) ) {
+			return $css;
+		}
 		$var_id      = $variable['id'];
 		$font_family = isset( $mode_data['font-family'] ) ? $mode_data['font-family'] : '';
 		$styles      = isset( $mode_data['styles'] ) ? $mode_data['styles'] : array();
 		$ts_selector = '[data-text_style="' . $var_id . '"]';
+		$device_rules = array();
 
 		foreach ( $styles as $device => $props ) {
 			$css_declarations = '';
@@ -1012,12 +1002,26 @@ class Preview extends ExceptionalElements {
 
 			$rule = $ts_selector . '{' . $css_declarations . '}';
 
-			if ( $device === 'md' ) {
-				$css .= $rule;
-			} elseif ( isset( $view_ports[ $device ] ) ) {
-				$max_width = $view_ports[ $device ]['maxWidth'];
-				$css .= '@media only screen and (max-width:' . $max_width . 'px){' . $rule . '}';
+			if ( isset( $device_rules[ $device ] ) ) {
+				$device_rules[ $device ] .= $rule;
+			} else {
+				$device_rules[ $device ] = $rule;
 			}
+		}
+
+		foreach ( $view_ports as $device => $vp ) {
+			if ( empty( $device_rules[ $device ] ) ) {
+				continue;
+			}
+
+			if ( $device === 'md' ) {
+				$css .= $device_rules[ $device ];
+				continue;
+			}
+
+			$media_type = ( isset( $vp['type'] ) && $vp['type'] === 'max' ) ? 'max' : 'min';
+			$media_value = isset( $vp['value'] ) ? $vp['value'] : $vp[ $media_type . 'Width' ];
+			$css .= '@media only screen and (' . $media_type . '-width:' . $media_value . 'px){' . $device_rules[ $device ] . '}';
 		}
 
 		return $css;
@@ -2391,6 +2395,23 @@ class Preview extends ExceptionalElements {
 
 		if(!empty($this_element['properties']['textStyleId'])) {
 			$attr_str .= ' data-text_style="' . $this_element['properties']['textStyleId'] . '"';
+		}
+
+		if ( $this->include_component_field_metadata ) {
+			$properties = $this_element['properties'];
+
+			if ( ! empty( $properties['symbolElPropId'] ) ) {
+				$attr_str .= ' data-kirki-symbol-el-prop-id="' . esc_attr( $properties['symbolElPropId'] ) . '"';
+			}
+
+			if ( ! empty( $properties['componentFieldBindings'] ) ) {
+				$bindings = base64_encode( wp_json_encode( $properties['componentFieldBindings'] ) );
+				$attr_str .= ' data-kirki-component-field-bindings="' . esc_attr( $bindings ) . '"';
+			}
+
+			if ( 'symbol' === $this_element['name'] && ! empty( $properties['symbolId'] ) ) {
+				$attr_str .= ' data-kirki-component-symbol-id="' . esc_attr( $properties['symbolId'] ) . '"';
+			}
 		}
 
 		// $attr_str .= ' data-kirki_name="' . $this_element['name'] . '"';

@@ -9,6 +9,7 @@ use Kirki\App\Http\Controllers\Api\PageController;
 use Kirki\App\Http\Controllers\Api\FormController;
 use Kirki\App\Http\Controllers\Api\CollectionController;
 use Kirki\App\Http\Controllers\Api\CollaborationCommentController;
+use Kirki\App\Http\Controllers\Api\BroadcastingController;
 use Kirki\App\Http\Controllers\Api\CollaborationController;
 use Kirki\App\Http\Middlewares\EditAccessMiddleware;
 use Kirki\App\Http\Middlewares\FullAccessMiddleware;
@@ -18,6 +19,7 @@ use Kirki\App\Http\Controllers\Api\GlobalDataController;
 use Kirki\App\Http\Controllers\Api\PageSettingsController;
 use Kirki\App\Http\Controllers\Api\PostController;
 use Kirki\App\Http\Controllers\Api\UserController;
+use Kirki\App\Http\Middlewares\VerifyRestNonceMiddleware;
 use Kirki\App\Http\Middlewares\ViewAccessMiddleware;
 use Kirki\App\Http\Middlewares\ViewOrPreviewMiddleware;
 use Kirki\Framework\Http\Request;
@@ -63,6 +65,7 @@ Route::group([
     Route::put('/walkthrough-shown-state', [UserController::class, 'set_walkthrough_state']);
 
     Route::post('/collaboration-actions', [CollaborationController::class, 'save_actions']);
+    Route::post('/broadcasting/auth', [BroadcastingController::class, 'authenticate']);
 
     Route::get('/validate-wp-post-slug', [PostController::class, 'validate_slug']);
     Route::post('/global-styles', [GlobalDataController::class, 'save_global_styles']);
@@ -174,4 +177,4 @@ Route::group(['middleware' => EditAccessMiddleware::class], function () {
 });
 
 // Front-end form submission
-Route::post('/frontend/form', [FormController::class, 'store']);
+Route::post('/frontend/form', [FormController::class, 'store'])->middleware(VerifyRestNonceMiddleware::class);

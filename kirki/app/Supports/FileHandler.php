@@ -7,11 +7,11 @@ defined('ABSPATH') || exit;
 use Exception;
 use Kirki\Framework\Supports\Facades\File as FileHelper;
 use Kirki\Framework\Supports\Facades\Http;
+use Kirki\HelperFunctions;
 use PclZip;
 
 use function Kirki\App\get_upload_directory;
 use function Kirki\Framework\clean_path;
-use function Kirki\Framework\Polyfill\array_last;
 
 class FileHandler 
 {
@@ -31,43 +31,57 @@ class FileHandler
 	 */
     public static function download_zip_from_remote(string $remote_file_url, string $file_name)
     {
-        $file_ext = explode('.', $remote_file_url); // ['file', 'ext']
-		$file_ext = strtolower(array_last($file_ext)); // 'ext'
-		$allowed = ['zip'];
+			// Extension check must run against the URL *path* only, not the whole
+			// URL — otherwise "?x=.zip" trivially satisfies a whole-string check.
+			$url_path = (string) wp_parse_url($remote_file_url, PHP_URL_PATH);
+			$file_ext = strtolower(pathinfo($url_path, PATHINFO_EXTENSION));
+			$allowed = ['zip'];
 
-		if (!in_array($file_ext, $allowed)) {
-			return false;
-		}
+			if (!in_array($file_ext, $allowed, true)) {
+				return false;
+			}
 
-		// Download the file from the remote server.
-		$response = Http::timeout(120)
-			->with_options([
-				'redirection' => 0
-			])
-			->with_user_agent('WordPress')
-			->get($remote_file_url);
+			if (!HelperFunctions::is_safe_url($remote_file_url)) {
+				return false;
+			}
 
-		if ($response->failed()) {
-			return false;
-		}
+			// Download the file from the remote server.
+			$request = Http::timeout(120)
+				->with_options([
+					'redirection' => 0
+				])
+				->with_user_agent('WordPress');
 
-		// Save the file locally.
-		// Local path to save the downloaded file.
-		$local_file_path = clean_path(get_upload_directory() . '/' . $file_name, false);
+			// Localhost is usually served over a self-signed certificate, which
+			// makes cURL refuse the request.
+			if (HelperFunctions::is_localhost(wp_parse_url($remote_file_url, PHP_URL_HOST))) {
+				$request->without_verifying();
+			}
 
-		static::verify_directory_traversal($local_file_path);
-		
-		$is_downloaded = FileHelper::put($local_file_path, $response->body());
+			$response = $request->get($remote_file_url);
 
-		if (!$is_downloaded) {
-			return false;
-		}
-		
-		return $local_file_path;
+			if ($response->failed()) {
+				return false;
+			}
+
+			// Save the file locally.
+			// Local path to save the downloaded file.
+			$local_file_path = clean_path(get_upload_directory() . '/' . $file_name, false);
+
+			static::verify_directory_traversal($local_file_path);
+			
+			$is_downloaded = FileHelper::put($local_file_path, $response->body());
+
+			if (!$is_downloaded) {
+				return false;
+			}
+			
+			return $local_file_path;
     }
 
+
 	/**
-	 * @return array|false 
+	 * @return array|false
 	 * return false on failure
 	 */
 	public static function extract_zip_file(string $zip_file_path, string $destination_dir)
